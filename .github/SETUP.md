@@ -1,83 +1,31 @@
 # 🔐 GitHub Repository Setup Guide
 
-This guide explains how to set up your GitHub repository for automatic Docker image builds and deployment to Google Container Registry (GCR).
+This guide explains how to set up your GitHub repository for automatic Docker image builds and deployment to GitHub Container Registry (GHCR).
 
 ## 📋 Prerequisites
 
-1. **Google Cloud Project** with billing enabled
-2. **Google Container Registry** enabled
-3. **GitHub Repository** with admin access
-4. **Service Account** with appropriate permissions
+1. **GitHub Repository** with admin access
+2. **GitHub Account** (free tier supports public packages)
 
-## 🛠️ Google Cloud Setup
+## 🛠️ GitHub Setup
 
-### 1. Create a Service Account
+### 1. Enable GitHub Packages
 
-```bash
-# Set your project ID
-export PROJECT_ID="your-project-id"
+GitHub Container Registry (GHCR) is automatically available for all GitHub repositories. No additional setup required!
 
-# Create service account
-gcloud iam service-accounts create github-actions \
-    --description="Service account for GitHub Actions" \
-    --display-name="GitHub Actions"
+### 2. Repository Permissions
 
-# Get the service account email
-export SA_EMAIL="github-actions@${PROJECT_ID}.iam.gserviceaccount.com"
-```
+The GitHub Actions workflows use the built-in `GITHUB_TOKEN` with the following permissions:
+- `contents: read` - Read repository contents
+- `packages: write` - Push container images to GHCR
 
-### 2. Grant Required Permissions
-
-```bash
-# Grant Storage Admin role for GCR
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:${SA_EMAIL}" \
-    --role="roles/storage.admin"
-
-# Grant Container Registry Service Agent role
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:${SA_EMAIL}" \
-    --role="roles/containerregistry.ServiceAgent"
-```
-
-### 3. Create and Download Service Account Key
-
-```bash
-# Create key file
-gcloud iam service-accounts keys create github-actions-key.json \
-    --iam-account=$SA_EMAIL
-
-# Display the key content (you'll need this for GitHub Secrets)
-cat github-actions-key.json
-```
+These permissions are automatically granted and require no additional configuration.
 
 ## 🔑 GitHub Repository Secrets
 
-Go to your GitHub repository → Settings → Secrets and variables → Actions
+**✅ No additional secrets required!**
 
-### Required Secrets
-
-Add the following repository secrets:
-
-| Secret Name | Description | Example Value |
-|-------------|-------------|---------------|
-| `GCP_PROJECT_ID` | Your Google Cloud Project ID | `my-solr-project-123456` |
-| `GCP_SA_KEY` | Service Account JSON key (entire content) | `{ "type": "service_account", ... }` |
-
-### How to Add Secrets
-
-1. **Navigate to Secrets**:
-   ```
-   GitHub Repository → Settings → Secrets and variables → Actions → New repository secret
-   ```
-
-2. **Add GCP_PROJECT_ID**:
-   - Name: `GCP_PROJECT_ID`
-   - Value: Your Google Cloud Project ID
-
-3. **Add GCP_SA_KEY**:
-   - Name: `GCP_SA_KEY`
-   - Value: Complete JSON content from `github-actions-key.json`
+The workflows use the built-in `GITHUB_TOKEN` which is automatically provided by GitHub Actions.
 
 ## 🚀 Container Registry Access
 
@@ -86,23 +34,151 @@ Add the following repository secrets:
 After successful builds, your images will be available at:
 
 ```
-gcr.io/YOUR_PROJECT_ID/solr-admin-x:latest
-gcr.io/YOUR_PROJECT_ID/solr-admin-x:main
-gcr.io/YOUR_PROJECT_ID/solr-admin-x:v1.0.0
+ghcr.io/vibhuvioio/solr-admin-x:latest
+ghcr.io/vibhuvioio/solr-admin-x:main
+ghcr.io/vibhuvioio/solr-admin-x:develop
+ghcr.io/vibhuvioio/solr-admin-x:v1.0.0
 ```
 
-### Pull Images
+### Pull Images (Public Access)
 
 ```bash
-# Configure Docker to use gcloud credentials
-gcloud auth configure-docker gcr.io
-
-# Pull the latest image
-docker pull gcr.io/YOUR_PROJECT_ID/solr-admin-x:latest
+# Pull the latest image (no authentication required for public packages)
+docker pull ghcr.io/vibhuvioio/solr-admin-x:latest
 
 # Run the container
-docker run -p 3000:3000 gcr.io/YOUR_PROJECT_ID/solr-admin-x:latest
+docker run -p 3000:3000 ghcr.io/vibhuvioio/solr-admin-x:latest
 ```
+
+### Making Packages Public
+
+By default, packages are private. To make them publicly accessible:
+
+1. Go to your repository on GitHub
+2. Click on "Packages" in the right sidebar
+3. Click on your package name
+4. Click "Package settings"
+5. Scroll down to "Danger Zone"
+6. Click "Change visibility" → "Public"
+
+## 🔄 Workflow Triggers
+
+### Automatic Builds
+
+GitHub Actions will automatically build and push images when:
+
+- **Push to main branch** → `ghcr.io/owner/repo:main` + `:latest`
+- **Push to develop branch** → `ghcr.io/owner/repo:develop`
+- **Create release tag** (v*) → `ghcr.io/owner/repo:v1.0.0`
+
+### Manual Triggers
+
+You can also trigger builds manually:
+1. Go to Actions tab in your repository
+2. Select "Build and Push Docker Image" workflow
+3. Click "Run workflow"
+
+## 🏗️ Multi-Platform Builds
+
+The workflow builds for multiple architectures:
+- `linux/amd64` (Intel/AMD)
+- `linux/arm64` (Apple Silicon, ARM servers)
+
+## 📊 Monitoring
+
+### Build Status
+
+Monitor build status:
+- **Repository**: Actions tab shows workflow runs
+- **Badges**: Add workflow badges to README
+- **Notifications**: Configure GitHub notifications for failed builds
+
+### Package Registry
+
+View pushed images:
+1. Go to your repository on GitHub
+2. Click "Packages" in the right sidebar
+3. View all published container images and their tags
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Permission Denied**
+   ```
+   Error: denied: permission_denied
+   ```
+   - Check repository permissions
+   - Ensure `packages: write` permission is set in workflow
+
+2. **Package Not Found**
+   ```
+   Error: pull access denied
+   ```
+   - Verify package is set to public visibility
+   - Check the exact image name and tag
+
+3. **Workflow Fails**
+   ```
+   Error: buildx failed
+   ```
+   - Check the Dockerfile syntax
+   - Verify all COPY paths exist
+   - Review build logs in Actions tab
+
+### Debug Commands
+
+```bash
+# Test local build
+docker build -t test-image .
+
+# Test local run
+docker run -p 3000:3000 test-image
+
+# Check available tags
+curl -s https://api.github.com/user/packages/container/solr-admin-x/versions \
+  -H "Authorization: Bearer YOUR_TOKEN" | jq '.[].metadata.container.tags'
+```
+
+## 🌟 Best Practices
+
+### Security
+- ✅ Use built-in `GITHUB_TOKEN` (automatically managed)
+- ✅ Enable branch protection rules
+- ✅ Review workflow permissions regularly
+- ✅ Set packages to public only when intended
+
+### Development
+- ✅ Test builds locally before pushing
+- ✅ Use semantic versioning for releases
+- ✅ Include proper commit messages for changelog generation
+- ✅ Review workflow runs for optimization opportunities
+
+### Deployment
+- ✅ Use specific image tags in production
+- ✅ Implement health checks in containers
+- ✅ Monitor container resource usage
+- ✅ Set up alerting for failed deployments
+
+## � Additional Resources
+
+- [GitHub Container Registry Documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Docker Multi-platform Builds](https://docs.docker.com/build/building/multi-platform/)
+- [GitHub Packages Permissions](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages)
+
+---
+
+**🎯 Quick Start Checklist:**
+
+- [ ] Repository exists on GitHub
+- [ ] Push code to trigger first build
+- [ ] Verify image appears in Packages section
+- [ ] Set package visibility to public
+- [ ] Test pulling the image
+- [ ] Add image pull instructions to README
+
+Your Docker images will be automatically built and publicly available for anyone to use! 🚀
 
 ## 🔄 Workflow Triggers
 

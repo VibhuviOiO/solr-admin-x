@@ -34,6 +34,19 @@ Solr Admin X is an **open source project** welcoming contributions from the comm
 - Docker & Docker Compose
 - Node.js 20+ (for local development)
 
+### 🐳 Using Pre-built Docker Images
+
+```bash
+# Pull and run the latest version
+docker pull ghcr.io/vibhuvioio/solr-admin-x:latest
+docker run -p 3000:3000 ghcr.io/vibhuvioio/solr-admin-x:latest
+
+# Or run directly
+docker run -p 3000:3000 ghcr.io/vibhuvioio/solr-admin-x:latest
+```
+
+The application will be available at: http://localhost:3000
+
 ### 🐳 Docker Development
 
 ```bash
@@ -213,11 +226,14 @@ docker-compose -f docker-compose.prod.yml ps
 ### Docker Hub Deployment
 
 ```bash
-# Tag the image
-docker tag solr-admin-x:latest your-registry/solr-admin-x:latest
+# Images are automatically published to GitHub Container Registry
+# Available tags:
+docker pull ghcr.io/vibhuvioio/solr-admin-x:latest        # Latest main branch
+docker pull ghcr.io/vibhuvioio/solr-admin-x:main          # Main branch
+docker pull ghcr.io/vibhuvioio/solr-admin-x:develop       # Develop branch  
+docker pull ghcr.io/vibhuvioio/solr-admin-x:v1.0.0        # Specific version
 
-# Push to registry
-docker push your-registry/solr-admin-x:latest
+# All images are publicly available - no authentication required
 ```
 
 ## 🔧 Development
