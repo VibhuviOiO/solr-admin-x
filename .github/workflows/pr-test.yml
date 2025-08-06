@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 22]
 
     steps:
       - name: Checkout code
@@ -19,16 +19,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          # Remove cache since we don't have lock files in root
 
       - name: Install root dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install backend dependencies
-        run: cd backend && npm ci
+        run: cd backend && npm install
 
       - name: Install frontend dependencies
-        run: cd fronend && npm ci
+        run: cd fronend && npm install
 
       - name: Lint backend
         run: cd backend && npm run lint || echo "Backend linting not configured"
