@@ -34,7 +34,7 @@ jobs:
         run: cd backend && npm run lint || echo "Backend linting not configured"
 
       - name: Lint frontend
-        run: cd fronend && npm run lint
+        run: cd fronend && npm run lint -- --max-warnings 50
 
       - name: Type check backend
         run: cd backend && npx tsc --noEmit

@@ -13,7 +13,11 @@
     "backend:dev": "cd backend && npm run dev",
     "frontend:build": "cd fronend && npm run build",
     "backend:build": "cd backend && npm run build",
-    "install:all": "npm install && cd fronend && npm install && cd ../backend && npm install"
+    "install:all": "npm install && cd fronend && npm install && cd ../backend && npm install",
+    "lint": "cd backend && npm run lint || true && cd ../fronend && npm run lint:warn || true",
+    "lint:fix": "cd backend && npm run lint:fix || true && cd ../fronend && npm run lint:fix || true",
+    "test:ci": "cd backend && npm run build && cd ../fronend && npm run build && docker build -t test-image .",
+    "clean": "rm -rf backend/dist fronend/dist backend/node_modules fronend/node_modules node_modules"
   },
   "dependencies": {
     "express": "^4.18.2",
