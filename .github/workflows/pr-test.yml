@@ -1,0 +1,69 @@
+name: PR Build and Test
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Install frontend dependencies
+        run: cd fronend && npm ci
+
+      - name: Lint backend
+        run: cd backend && npm run lint || echo "Backend linting not configured"
+
+      - name: Lint frontend
+        run: cd fronend && npm run lint
+
+      - name: Type check backend
+        run: cd backend && npx tsc --noEmit
+
+      - name: Type check frontend
+        run: cd fronend && npx tsc --noEmit
+
+      - name: Build backend
+        run: cd backend && npm run build
+
+      - name: Build frontend
+        run: cd fronend && npm run build
+
+      - name: Test Docker build
+        run: docker build -t test-image .
+
+  docker-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t solr-admin-x:test .
+
+      - name: Test Docker image
+        run: |
+          docker run -d --name test-container -p 3000:3000 solr-admin-x:test
+          sleep 10
+          curl -f http://localhost:3000/health || exit 1
+          docker stop test-container
+          docker rm test-container
