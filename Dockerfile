@@ -1,18 +1,36 @@
 FROM node:20 AS builder
 
-# Build frontend
+# Set working directory
 WORKDIR /app
-COPY fronend ./fronend
-WORKDIR /app/fronend
-RUN npm ci && npm run build
 
-# Build backend
+# Copy package files first for better caching
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+COPY fronend/package*.json ./fronend/
+
+# Install root dependencies
+RUN npm install
+
+# Install backend dependencies
+WORKDIR /app/backend
+RUN npm install
+
+# Install frontend dependencies
+WORKDIR /app/fronend
+RUN npm install
+
+# Copy source code
 WORKDIR /app
 COPY backend ./backend
-COPY package*.json ./
-RUN npm ci
+COPY fronend ./fronend
+
+# Build backend
 WORKDIR /app/backend
-RUN npm ci && npm run build
+RUN npm run build
+
+# Build frontend
+WORKDIR /app/fronend
+RUN npm run build
 
 # Production image
 FROM node:20-alpine
@@ -26,9 +44,6 @@ COPY --from=builder /app/backend/src/config ./src/config
 
 # Copy frontend build
 COPY --from=builder /app/fronend/dist ./public
-
-# Create a simple static file server setup
-RUN npm install express cors dotenv axios
 
 ENV NODE_ENV=production
 EXPOSE 3000
