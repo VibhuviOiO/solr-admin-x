@@ -1,6 +1,6 @@
 import { NavLink, useSearchParams, useLocation } from "react-router-dom"
-import { 
-  ChevronRight, 
+import {
+  ChevronRight,
   ChevronDown,
   BarChart3,
   Server,
@@ -69,9 +69,9 @@ export function AppSidebar() {
           const data = await response.json()
           setDatacenters(data.datacenters || data)
           
-          // Initialize all datacenters as closed by default
+          // Initialize only the default datacenter as open
           const initialOpenState = (data.datacenters || data).reduce((acc: Record<string, boolean>, dc: DatacenterConfig) => {
-            acc[dc.name] = false
+            acc[dc.name] = dc.default || false
             return acc
           }, {})
           setOpenDatacenters(initialOpenState)
@@ -109,10 +109,10 @@ export function AppSidebar() {
           }
         ]
         setDatacenters(fallbackDatacenters)
-        // Initialize all datacenters as closed by default
+        // Initialize only the default datacenter as open
         setOpenDatacenters({
-          'London': false,
-          'Virginia': false
+          'London': true,   // Default datacenter open
+          'Virginia': false // Others closed
         })
       }
     }
@@ -120,7 +120,7 @@ export function AppSidebar() {
     fetchDatacenters()
   }, [])
 
-  // Keep active datacenter menu open
+  // Ensure active datacenter menu stays open when navigating within it
   useEffect(() => {
     if (activeDatacenter) {
       setOpenDatacenters(prev => ({
@@ -129,13 +129,6 @@ export function AppSidebar() {
       }))
     }
   }, [activeDatacenter])
-
-  const toggleDatacenter = (datacenter: string) => {
-    setOpenDatacenters(prev => ({
-      ...prev,
-      [datacenter]: !prev[datacenter]
-    }))
-  }
 
   // Menu items for each datacenter
   const datacenterMenuItems = [
@@ -202,10 +195,9 @@ export function AppSidebar() {
                 <NavLink
                   to="/cluster/nodes"
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                      isActive
-                        ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/20 dark:text-blue-200'
-                        : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
+                      ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/20 dark:text-blue-200'
+                      : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`
                   }
                 >
@@ -226,71 +218,66 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               {datacenters.map((datacenter) => {
                 const isActiveDatacenter = activeDatacenter === datacenter.name
-                const isOpen = openDatacenters[datacenter.name] || isActiveDatacenter
-                
+                const isOpen = openDatacenters[datacenter.name] || false
+
                 return (
-                <SidebarMenuItem key={datacenter.name}>
-                  <Collapsible 
-                    open={isOpen}
-                    onOpenChange={(open) => {
-                      // Don't allow closing the active datacenter menu
-                      if (isActiveDatacenter && !open) {
-                        return
-                      }
-                      setOpenDatacenters(prev => ({
-                        ...prev,
-                        [datacenter.name]: open
-                      }))
-                    }}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <button 
-                        className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-2 h-2 rounded-full ${
-                            isActiveDatacenter 
-                              ? 'bg-blue-500' 
-                              : datacenter.default 
-                              ? 'bg-blue-500' 
-                              : 'bg-green-500'
-                          }`} />
-                          <span>{datacenter.name}</span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">({datacenter.nodes.length})</span>
-                        </div>
-                        {isOpen ? (
-                          <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        )}
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-1 space-y-1">
-                      {datacenterMenuItems.map((item) => {
-                        // Generate datacenter-specific route
-                        const linkPath = `/datacenter/${datacenter.name}${item.path}`
-                        
-                        return (
-                          <div key={item.path} className="pl-8">
-                            <NavLink
-                              to={linkPath}
-                              className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                                  isActive
+                  <SidebarMenuItem key={datacenter.name}>
+                    <Collapsible
+                      open={isOpen}
+                      onOpenChange={(open) => {
+                        // Simple toggle behavior - user controls when menus open/close
+                        setOpenDatacenters(prev => ({
+                          ...prev,
+                          [datacenter.name]: open
+                        }))
+                      }}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <button
+                          className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full ${isActiveDatacenter
+                                ? 'bg-blue-500'
+                                : datacenter.default
+                                  ? 'bg-blue-500'
+                                  : 'bg-green-500'
+                              }`} />
+                            <span>{datacenter.name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">({datacenter.nodes.length})</span>
+                          </div>
+                          {isOpen ? (
+                            <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          )}
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-1 space-y-1">
+                        {datacenterMenuItems.map((item) => {
+                          // Generate datacenter-specific route
+                          const linkPath = `/datacenter/${datacenter.name}${item.path}`
+
+                          return (
+                            <div key={item.path} className="pl-8">
+                              <NavLink
+                                to={linkPath}
+                                className={({ isActive }) =>
+                                  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
                                     ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/20 dark:text-blue-200'
                                     : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                }`
-                              }
-                            >
-                              <item.icon className="w-4 h-4" />
-                              {item.title}
-                            </NavLink>
-                          </div>
-                        )
-                      })}
-                    </CollapsibleContent>
-                  </Collapsible>
-                </SidebarMenuItem>
+                                  }`
+                                }
+                              >
+                                <item.icon className="w-4 h-4" />
+                                {item.title}
+                              </NavLink>
+                            </div>
+                          )
+                        })}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </SidebarMenuItem>
                 )
               })}
             </SidebarMenu>

@@ -5,10 +5,46 @@ import * as path from 'path';
 
 const router = express.Router();
 
-// Load datacenter configuration
-const dcConfigPath = path.join(__dirname, '../config/dc-data.json');
-const dcDataRaw = fs.readFileSync(dcConfigPath, 'utf8');
-const dcDataConfig = JSON.parse(dcDataRaw);
+// Load datacenter configuration from environment or file
+function loadDatacenterConfig() {
+  // Option 1: Load from environment variable (JSON string)
+  if (process.env.DC_CONFIG_JSON) {
+    try {
+      return JSON.parse(process.env.DC_CONFIG_JSON);
+    } catch (error) {
+      console.error('Error parsing DC_CONFIG_JSON:', error);
+      throw new Error('Invalid DC_CONFIG_JSON format');
+    }
+  }
+
+  // Option 2: Load from custom file path
+  const configPath = process.env.DC_CONFIG_PATH || path.join(__dirname, '../config/dc-data.json');
+  
+  try {
+    const dcDataRaw = fs.readFileSync(configPath, 'utf8');
+    return JSON.parse(dcDataRaw);
+  } catch (error) {
+    console.error(`Error loading datacenter config from ${configPath}:`, error);
+    // Fallback to default configuration
+    return {
+      datacenters: [
+        {
+          name: "London",
+          default: true,
+          zookeeperNodes: [
+            { host: "localhost", port: 2181 }
+          ],
+          nodes: [
+            { name: "solr1", host: "localhost", port: 8983 }
+          ]
+        }
+      ]
+    };
+  }
+}
+
+const dcDataConfig = loadDatacenterConfig();
+console.log('Loaded datacenter configuration:', JSON.stringify(dcDataConfig, null, 2));
 
 // Define types for datacenter configuration
 interface ClusterNode {
@@ -481,6 +517,23 @@ router.get('/cluster/zookeeper/:datacenter/details', async (req: Request, res: R
     res.status(500).json({
       error: 'Failed to fetch detailed ZooKeeper information',
       details: axios.isAxiosError(error) ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get datacenter configuration (for frontend sidebar)
+router.get('/datacenters', async (req: Request, res: Response) => {
+  try {
+    // Return the datacenter configuration that's already loaded
+    res.json({
+      datacenters: dcDataConfig.datacenters || [],
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching datacenters config:', error);
+    res.status(500).json({
+      error: 'Failed to fetch datacenters configuration',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

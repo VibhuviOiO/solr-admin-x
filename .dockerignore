@@ -7,9 +7,14 @@ docker-compose*.yml
 .git
 .gitignore
 
+# Configuration (mounted externally)
+config/
+backend/src/config/dc-data.json
+
 # Documentation
 README.md
 PROMPTS.md
+CONFIGURATION.md
 *.md
 
 # IDE

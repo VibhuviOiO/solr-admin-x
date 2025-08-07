@@ -36,16 +36,23 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy backend build and dependencies
+# Install production dependencies only
+RUN npm install --production express cors dotenv axios
+
+# Copy backend build
 COPY --from=builder /app/backend/dist ./
 COPY --from=builder /app/backend/package*.json ./
-COPY --from=builder /app/backend/node_modules ./node_modules
-COPY --from=builder /app/backend/src/config ./src/config
 
 # Copy frontend build
 COPY --from=builder /app/fronend/dist ./public
 
+# Create config directory for external mounting
+RUN mkdir -p /app/config
+
+# Environment variables
 ENV NODE_ENV=production
-EXPOSE 3000
+ENV DC_CONFIG_PATH=/app/config/dc-data.json
+
+EXPOSE 3001
 
 CMD ["node", "server.js"]
