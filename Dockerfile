@@ -51,7 +51,7 @@ RUN mkdir -p /app/config
 
 # Environment variables
 ENV NODE_ENV=production
-ENV DC_CONFIG_PATH=/app/config/dc-data.json
+# DC_CONFIG_PATH must be set via docker-compose or docker run
 
 EXPOSE 3001
 

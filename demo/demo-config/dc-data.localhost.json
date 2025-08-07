@@ -1,7 +1,7 @@
 {
   "datacenters": [
     {
-      "name": "London",
+      "name": "APAC Singapore",
       "default": true,
       "zookeeperNodes": [
         { "host": "localhost", "port": 2181 },
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "name": "Virginia",
+      "name": "APAC Tokyo",
       "zookeeperNodes": [
         { "host": "localhost", "port": 5181 },
         { "host": "localhost", "port": 4182 },

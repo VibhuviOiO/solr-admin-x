@@ -1,0 +1,29 @@
+{
+  "datacenters": [
+    {
+      "name": "APAC Singapore",
+      "default": true,
+      "zookeeperNodes": [
+        { "host": "zookeeper-1", "port": 2181 },
+        { "host": "zookeeper-2", "port": 2181 },
+        { "host": "zookeeper-3", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1", "host": "solr1", "port": 8983 },
+        { "name": "solr2", "host": "solr2", "port": 8983 }
+      ]
+    },
+    {
+      "name": "APAC Tokyo",
+      "zookeeperNodes": [
+        { "host": "zookeeper-1-2", "port": 2181 },
+        { "host": "zookeeper-2-2", "port": 2181 },
+        { "host": "zookeeper-3-2", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1_dc2", "host": "solr1_dc2", "port": 8983 },
+        { "name": "solr2_dc2", "host": "solr2_dc2", "port": 8983 }
+      ]
+    }
+  ]
+}

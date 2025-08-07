@@ -110,12 +110,191 @@ solr-admin-x/
 │   │   └── lib/           # Utilities
 │   ├── package.json
 │   └── vite.config.ts
+├── demo/                   # Complete demo environment
+│   ├── docker-compose-*.yml # Demo Solr clusters
+│   └── demo-config/        # Demo configurations
 ├── docker-compose.dev.yml   # Development environment
 ├── docker-compose.prod.yml  # Production environment
 ├── Dockerfile              # Production build
 ├── Dockerfile.dev          # Development build
 └── package.json            # Root package.json
 ```
+
+## ⚙️ Configuration
+
+Solr Admin X requires a datacenter configuration file to define your Solr clusters. The application uses the `DC_CONFIG_PATH` environment variable to locate this file.
+
+### 📋 Required Configuration
+
+**You MUST create a configuration file and set `DC_CONFIG_PATH`** before running the application.
+
+### 📄 Configuration File Format
+
+Create a JSON file with this structure:
+
+```json
+{
+  "datacenters": [
+    {
+      "name": "Your Datacenter Name",
+      "default": true,
+      "zookeeperNodes": [
+        { "host": "zk1.example.com", "port": 2181 },
+        { "host": "zk2.example.com", "port": 2181 },
+        { "host": "zk3.example.com", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1", "host": "solr1.example.com", "port": 8983 },
+        { "name": "solr2", "host": "solr2.example.com", "port": 8983 }
+      ]
+    },
+    {
+      "name": "Secondary Datacenter",
+      "zookeeperNodes": [
+        { "host": "zk1-dc2.example.com", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1_dc2", "host": "solr1-dc2.example.com", "port": 8983 }
+      ]
+    }
+  ]
+}
+```
+
+### 🚀 Quick Setup
+
+1. **Create your config directory**:
+   ```bash
+   mkdir -p /path/to/your/config
+   ```
+
+2. **Create your configuration file**:
+   ```bash
+   vim /path/to/your/config/solr-datacenters.json
+   # Add your datacenter configuration (see format above)
+   ```
+
+3. **Set the environment variable**:
+   ```bash
+   export DC_CONFIG_PATH=/path/to/your/config/solr-datacenters.json
+   ```
+
+### 🐳 Docker Configuration
+
+#### With Docker Compose:
+```yaml
+services:
+  solr-admin-x:
+    image: ghcr.io/vibhuvioio/solr-admin-x:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DC_CONFIG_PATH=/app/config/solr-datacenters.json
+    volumes:
+      - /path/to/your/config:/app/config:ro
+```
+
+#### With Docker Run:
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v /path/to/your/config:/app/config:ro \
+  -e DC_CONFIG_PATH=/app/config/solr-datacenters.json \
+  ghcr.io/vibhuvioio/solr-admin-x:latest
+```
+
+### 🧪 Demo Configuration
+
+For testing, you can use the demo environment which includes sample configurations:
+
+```bash
+# Use demo configuration
+export DC_CONFIG_PATH=./demo/demo-config/dc-data.localhost.json
+
+# Or for Docker demo
+export DC_CONFIG_PATH=./demo/demo-config/dc-data.demo.json
+```
+
+### 🏗️ Development Configuration
+
+During development, if no config is provided, the application will:
+
+1. **Show an error** requiring `DC_CONFIG_PATH` to be set
+2. **Fall back to sample config** with APAC Singapore/Tokyo datacenters
+3. **Display a warning** to create a proper configuration
+
+### 📝 Configuration Examples
+
+#### Local Development:
+```json
+{
+  "datacenters": [
+    {
+      "name": "Local Development",
+      "default": true,
+      "zookeeperNodes": [
+        { "host": "localhost", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1", "host": "localhost", "port": 8983 }
+      ]
+    }
+  ]
+}
+```
+
+#### Production Multi-DC:
+```json
+{
+  "datacenters": [
+    {
+      "name": "US East",
+      "default": true,
+      "zookeeperNodes": [
+        { "host": "zk1.us-east.example.com", "port": 2181 },
+        { "host": "zk2.us-east.example.com", "port": 2181 },
+        { "host": "zk3.us-east.example.com", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1", "host": "solr1.us-east.example.com", "port": 8983 },
+        { "name": "solr2", "host": "solr2.us-east.example.com", "port": 8983 },
+        { "name": "solr3", "host": "solr3.us-east.example.com", "port": 8983 }
+      ]
+    },
+    {
+      "name": "EU West",
+      "zookeeperNodes": [
+        { "host": "zk1.eu-west.example.com", "port": 2181 },
+        { "host": "zk2.eu-west.example.com", "port": 2181 },
+        { "host": "zk3.eu-west.example.com", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1", "host": "solr1.eu-west.example.com", "port": 8983 },
+        { "name": "solr2", "host": "solr2.eu-west.example.com", "port": 8983 }
+      ]
+    }
+  ]
+}
+```
+
+### ✅ Configuration Validation
+
+Validate your configuration file:
+
+```bash
+# Check JSON syntax
+cat your-config.json | jq .
+
+# Test with application
+DC_CONFIG_PATH=your-config.json npm run backend:dev
+```
+
+### 🔒 Security Notes
+
+- **Never commit** configuration files with production hostnames
+- **Use read-only mounts** in production Docker containers
+- **Validate** configuration files before deployment
+- **Use secrets management** for sensitive information
 
 ## 🐳 Docker Configuration
 

@@ -1,23 +1,84 @@
 # 🔧 Configuration Management Guide
 
-This guide explains how to configure Solr Admin X with external datacenter configuration, making it completely isolated from the codebase.
+This guide explains how to configure Solr Admin X with external datacenter configuration. **Configuration files are not included in the repository** - you must create them yourself.
 
-## 🎯 Configuration Methods
+## 🎯 Configuration Philosophy
+
+Solr Admin X follows the **externalized configuration** pattern:
+- ✅ **No config files in the codebase**
+- ✅ **DC_CONFIG_PATH environment variable required**
+- ✅ **Create configurations outside the repository**
+- ✅ **Full control over your datacenter setup**
+
+## 📋 Required Setup
+
+**Before running Solr Admin X, you MUST:**
+
+1. **Create a configuration file** (see format below)
+2. **Set DC_CONFIG_PATH** to point to your file
+3. **Mount the config file** in Docker containers
+
+## 📄 Configuration File Format
+
+Create a JSON file with your Solr datacenters:
+
+```json
+{
+  "datacenters": [
+    {
+      "name": "Your Datacenter Name",
+      "default": true,
+      "zookeeperNodes": [
+        { "host": "your-zk-host", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1", "host": "your-solr-host", "port": 8983 }
+      ]
+    }
+  ]
+}
+```
+
+## 🚀 Quick Configuration Setup
+
+### Step 1: Create Config Directory
+```bash
+# Create config directory (anywhere you want)
+mkdir -p /path/to/your/solr-configs
+```
+
+### Step 2: Create Configuration File
+```bash
+# Create your datacenter config
+cat > /path/to/your/solr-configs/datacenters.json << 'EOF'
+{
+  "datacenters": [
+    {
+      "name": "Production DC",
+      "default": true,
+      "zookeeperNodes": [
+        { "host": "zk1.prod.example.com", "port": 2181 },
+        { "host": "zk2.prod.example.com", "port": 2181 },
+        { "host": "zk3.prod.example.com", "port": 2181 }
+      ],
+      "nodes": [
+        { "name": "solr1", "host": "solr1.prod.example.com", "port": 8983 },
+        { "name": "solr2", "host": "solr2.prod.example.com", "port": 8983 }
+      ]
+    }
+  ]
+}
+EOF
+```
+
+### Step 3: Set Environment Variable
+```bash
+export DC_CONFIG_PATH=/path/to/your/solr-configs/datacenters.json
+```
+
+## 🐳 Docker Configuration Methods
 
 ### Method 1: External JSON File (Recommended)
-
-Mount a configuration file to the container:
-
-```bash
-# Create your config directory
-mkdir -p ./config
-
-# Copy and modify the example
-cp config/dc-data.production.json config/dc-data.json
-
-# Edit the configuration
-vim config/dc-data.json
-```
 
 **Docker Run:**
 ```bash

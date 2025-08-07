@@ -19,8 +19,7 @@
     "lint": "cd backend && npm run lint || true && cd ../fronend && npm run lint:warn || true",
     "lint:fix": "cd backend && npm run lint:fix || true && cd ../fronend && npm run lint:fix || true",
     "test:ci": "cd backend && npm run build && cd ../fronend && npm run build && docker build -t test-image .",
-    "clean": "rm -rf backend/dist fronend/dist backend/node_modules fronend/node_modules node_modules",
-    "config:validate": "for file in config/*.json; do echo \"Validating $file:\"; cat \"$file\" | jq . > /dev/null && echo \"✅ Valid JSON\" || echo \"❌ Invalid JSON\"; done"
+    "clean": "rm -rf backend/dist fronend/dist backend/node_modules fronend/node_modules node_modules"
   },
   "dependencies": {
     "express": "^4.18.2",

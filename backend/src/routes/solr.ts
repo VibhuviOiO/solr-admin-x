@@ -17,25 +17,45 @@ function loadDatacenterConfig() {
     }
   }
 
-  // Option 2: Load from custom file path
-  const configPath = process.env.DC_CONFIG_PATH || path.join(__dirname, '../config/dc-data.json');
+  // Option 2: Load from custom file path (DC_CONFIG_PATH is required)
+  if (!process.env.DC_CONFIG_PATH) {
+    throw new Error('DC_CONFIG_PATH environment variable is required. Please set it to point to your datacenter configuration file.');
+  }
+  
+  const configPath = process.env.DC_CONFIG_PATH;
   
   try {
     const dcDataRaw = fs.readFileSync(configPath, 'utf8');
     return JSON.parse(dcDataRaw);
   } catch (error) {
     console.error(`Error loading datacenter config from ${configPath}:`, error);
-    // Fallback to default configuration
+    // Fallback to sample configuration for development
+    console.warn('Using sample configuration. Create a proper config file and set DC_CONFIG_PATH.');
     return {
       datacenters: [
         {
-          name: "London",
+          name: "APAC Singapore",
           default: true,
           zookeeperNodes: [
-            { host: "localhost", port: 2181 }
+            { host: "localhost", port: 2181 },
+            { host: "localhost", port: 2182 },
+            { host: "localhost", port: 2183 }
           ],
           nodes: [
-            { name: "solr1", host: "localhost", port: 8983 }
+            { name: "solr1", host: "localhost", port: 8983 },
+            { name: "solr2", host: "localhost", port: 8982 }
+          ]
+        },
+        {
+          name: "APAC Tokyo",
+          zookeeperNodes: [
+            { host: "localhost", port: 5181 },
+            { host: "localhost", port: 4182 },
+            { host: "localhost", port: 5183 }
+          ],
+          nodes: [
+            { name: "solr1_dc2", host: "localhost", port: 8883 },
+            { name: "solr2_dc2", host: "localhost", port: 8882 }
           ]
         }
       ]

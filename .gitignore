@@ -42,6 +42,9 @@ pids
 .env.test.local
 .env.production.local
 
+# Configuration files (create manually, see README)
+config/
+
 # Coverage reports
 coverage/
 *.lcov

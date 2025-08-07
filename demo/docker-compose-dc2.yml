@@ -1,0 +1,151 @@
+services:
+  solr1_dc2:
+    image: solr:9.7.0
+    container_name: solr1_dc2
+    restart: always
+    runtime: runc
+    ports:
+      - "8883:8983"
+    depends_on:
+      zookeeper-1-2:
+        condition: service_healthy
+      zookeeper-2-2:
+        condition: service_healthy
+      zookeeper-3-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8983/solr/admin/info/system | grep -q 'solr_home'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - solr_dc2_net
+    environment:
+      SOLR_MODE: solrcloud
+      SOLR_HOST: solr1_dc2
+      SOLR_HEAP: 512m
+      ZK_HOST: zookeeper-1-2:2181,zookeeper-2-2:2181,zookeeper-3-2:2181
+      SOLR_HOME: /var/solr/data
+      SOLR_LOG_LEVEL: WARN
+    volumes:
+      - solr1_dc2_data:/var/solr/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "1g"
+
+  solr2_dc2:
+    image: solr:9.7.0
+    container_name: solr2_dc2
+    restart: always
+    ports:
+      - "8882:8983"
+    depends_on:
+      zookeeper-1-2:
+        condition: service_healthy
+      zookeeper-2-2:
+        condition: service_healthy
+      zookeeper-3-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8983/solr/admin/info/system | grep -q 'solr_home'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - solr_dc2_net
+    environment:
+      SOLR_MODE: solrcloud
+      SOLR_HOST: solr2_dc2
+      SOLR_HEAP: 512m
+      ZK_HOST: zookeeper-1-2:2181,zookeeper-2-2:2181,zookeeper-3-2:2181
+      SOLR_HOME: /var/solr/data
+      SOLR_LOG_LEVEL: WARN
+    volumes:
+      - solr2_dc2_data:/var/solr/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "1g"
+
+  zookeeper-1-2:
+    image: zookeeper:3.9.2
+    container_name: zookeeper-1-2
+    restart: always
+    hostname: zookeeper-1-2
+    ports:
+      - "5181:2181"
+      - "5888:2888"
+      - "6888:3888"
+      - "5001:7000"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - solr_dc2_net
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper-1-2:2888:3888;2181 server.2=zookeeper-2-2:2889:3889;2181 server.3=zookeeper-3-2:2890:3890;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+      ZOO_CFG_EXTRA: >
+        metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true
+
+  zookeeper-2-2:
+    image: zookeeper:3.9.2
+    container_name: zookeeper-2-2
+    restart: always
+    hostname: zookeeper-2-2
+    ports:
+      - "4182:2181"
+      - "5889:2888"
+      - "6889:3888"
+      - "5002:7000"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - solr_dc2_net
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper-1-2:2888:3888;2181 server.2=zookeeper-2-2:2889:3889;2181 server.3=zookeeper-3-2:2890:3890;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+      ZOO_CFG_EXTRA: >
+        metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true
+
+  zookeeper-3-2:
+    image: zookeeper:3.9.2
+    container_name: zookeeper-3-2
+    restart: always
+    hostname: zookeeper-3-2
+    ports:
+      - "5183:2181"
+      - "5890:2888"
+      - "6890:3888"
+      - "5003:7000"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - solr_dc2_net
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper-1-2:2888:3888;2181 server.2=zookeeper-2-2:2889:3889;2181 server.3=zookeeper-3-2:2890:3890;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+      ZOO_CFG_EXTRA: >
+        metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true
+
+volumes:
+  solr1_dc2_data:
+  solr2_dc2_data:
+
+networks:
+  solr_dc2_net:
+    external: true
