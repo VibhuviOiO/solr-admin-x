@@ -102,13 +102,10 @@ export function ZKStatusContent() {
       setLoading(true)
       setError(null)
       
-      console.log('Fetching ZK data for datacenter:', datacenter)
-      
       const zkResponse = await fetch(`http://localhost:3001/api/solr/cluster/zookeeper${datacenter ? `?datacenter=${datacenter}` : ''}`)
 
       if (zkResponse.ok) {
         const zkData: ZooKeeperInfo = await zkResponse.json()
-        console.log('ZK data:', zkData)
         setZkInfo(zkData)
       } else {
         console.error('Failed to fetch ZK info:', zkResponse)

@@ -35,5 +35,5 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log('Using datacenter configuration from dc-data.json');
+  console.log(`Configuration: ${process.env.DC_CONFIG_PATH || 'Using fallback sample config'}`);
 });

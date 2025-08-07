@@ -188,8 +188,10 @@ export function ClusterNodesContent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-foreground">Cluster Dashboard</h2>
-            <p className="text-muted-foreground">Loading...</p>
+            <h2 className="text-3xl font-bold text-foreground">
+              {selectedDatacenter !== 'all' ? `${selectedDatacenter} Datacenter` : 'Multi-Datacenter'} Overview
+            </h2>
+            <p className="text-muted-foreground">Loading datacenter metrics...</p>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -217,8 +219,10 @@ export function ClusterNodesContent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-foreground">Cluster Dashboard</h2>
-            <p className="text-muted-foreground">Error occurred</p>
+            <h2 className="text-3xl font-bold text-foreground">
+              {selectedDatacenter !== 'all' ? `${selectedDatacenter} Datacenter` : 'Multi-Datacenter'} Overview
+            </h2>
+            <p className="text-muted-foreground">Error loading datacenter information</p>
           </div>
           <Button onClick={() => fetchClusterData()} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -237,13 +241,47 @@ export function ClusterNodesContent() {
     )
   }
 
+  // Calculate consolidated metrics
+  const onlineNodes = nodes.filter(node => node.status === 'online')
+  const totalMemoryUsed = onlineNodes.reduce((sum, node) => 
+    sum + (node.systemInfo?.jvm?.memory?.raw?.used || 0), 0)
+  const totalMemoryMax = onlineNodes.reduce((sum, node) => 
+    sum + (node.systemInfo?.jvm?.memory?.raw?.max || 0), 0)
+  const avgMemoryUsage = totalMemoryMax > 0 ? (totalMemoryUsed / totalMemoryMax) * 100 : 0
+  
+  const avgCpuLoad = onlineNodes.length > 0 ? 
+    onlineNodes.reduce((sum, node) => 
+      sum + ((node.systemInfo?.system?.systemLoadAverage || 0) * 100), 0) / onlineNodes.length : 0
+  
+  const totalDocs = onlineNodes.reduce((sum: number, node) => {
+    if (!node.metrics?.metrics) return sum
+    let docsCount = 0
+    Object.values(node.metrics.metrics).forEach((metric: any) => {
+      if (metric && typeof metric === 'object' && 'SEARCHER.searcher.numDocs' in metric) {
+        docsCount += Number(metric['SEARCHER.searcher.numDocs'] || 0)
+      }
+    })
+    return sum + docsCount
+  }, 0)
+
+  const totalIndexSize = onlineNodes.reduce((sum: number, node) => {
+    if (!node.metrics?.metrics) return sum
+    let sizeBytes = 0
+    Object.values(node.metrics.metrics).forEach((metric: any) => {
+      if (metric && typeof metric === 'object' && 'INDEX.sizeInBytes' in metric) {
+        sizeBytes += Number(metric['INDEX.sizeInBytes'] || 0)
+      }
+    })
+    return sum + sizeBytes
+  }, 0)
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-1">
           <h1 className="text-4xl font-bold text-foreground tracking-tight">
-            Cluster Dashboard
+            {selectedDatacenter !== 'all' ? `${selectedDatacenter} Datacenter` : 'Multi-Datacenter'} Overview
           </h1>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -252,12 +290,12 @@ export function ClusterNodesContent() {
             </div>
             <div className="flex items-center gap-2">
               <Server className="w-4 h-4" />
-              <span>{nodes.length} Node{nodes.length !== 1 ? 's' : ''}</span>
+              <span>{onlineNodes.length}/{nodes.length} Node{nodes.length !== 1 ? 's' : ''} Online</span>
             </div>
             {selectedDatacenter !== 'all' && (
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs font-semibold">
                   {selectedDatacenter}
                 </Badge>
               </div>
@@ -270,6 +308,97 @@ export function ClusterNodesContent() {
             Refresh Data
           </Button>
         </div>
+      </div>
+
+      {/* Datacenter Overview Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-2">
+              <MemoryStick className="w-4 h-4" />
+              Memory Usage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                {avgMemoryUsage.toFixed(1)}%
+              </div>
+              <div className="text-xs text-blue-600 dark:text-blue-400">
+                {(totalMemoryUsed / (1024 * 1024 * 1024)).toFixed(1)}GB / {(totalMemoryMax / (1024 * 1024 * 1024)).toFixed(1)}GB
+              </div>
+              <div className="w-full bg-blue-200/50 dark:bg-blue-800/30 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min(avgMemoryUsage, 100)}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
+              <Cpu className="w-4 h-4" />
+              CPU Load
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                {avgCpuLoad.toFixed(1)}%
+              </div>
+              <div className="text-xs text-green-600 dark:text-green-400">
+                Average across {onlineNodes.length} nodes
+              </div>
+              <div className="w-full bg-green-200/50 dark:bg-green-800/30 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min(avgCpuLoad, 100)}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300 flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              Documents
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                {totalDocs.toLocaleString()}
+              </div>
+              <div className="text-xs text-purple-600 dark:text-purple-400">
+                Total indexed documents
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/50 dark:to-red-950/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300 flex items-center gap-2">
+              <HardDrive className="w-4 h-4" />
+              Index Size
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                {(totalIndexSize / (1024 * 1024 * 1024)).toFixed(1)}GB
+              </div>
+              <div className="text-xs text-orange-600 dark:text-orange-400">
+                Total index storage
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* ZooKeeper Information - Expandable */}
@@ -1036,7 +1165,7 @@ export function ClusterNodesContent() {
                         {/* Ensemble Specific Details */}
                         {dcZkInfo.mode === 'ensemble' && (
                           <>
-                            <tr className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20">
+                            <tr className="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20">
                               <td className="py-2 px-4 font-bold text-red-900 dark:text-red-200 text-xs uppercase tracking-wider" colSpan={dcZkInfo.zkHosts.length + 1}>
                                 <Collapsible open={ensembleDetailsExpanded} onOpenChange={setEnsembleDetailsExpanded}>
                                   <CollapsibleTrigger className="flex items-center gap-2 w-full hover:text-red-700 dark:hover:text-red-100">
@@ -1195,159 +1324,287 @@ export function ClusterNodesContent() {
         </Card>
       ))}
 
-      {/* Solr Nodes Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {nodes.map((node) => (
-          <Card key={node.id} className="shadow-sm border hover:shadow-md transition-all duration-200">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <Server className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{node.name}</h3>
-                    <p className="text-sm text-muted-foreground font-mono">{node.url}</p>
-                  </div>
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  {node.status === 'online' ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <AlertTriangle className="w-5 h-5 text-red-500" />
-                  )}
-                  <Badge variant={node.status === 'online' ? "default" : "destructive"} className="text-xs">
-                    {node.status.toUpperCase()}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {node.status === 'online' && node.systemInfo ? (
-                <>
-                  {/* Quick Metrics Grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MemoryStick className="w-4 h-4 text-blue-600" />
-                        <span className="text-xs font-medium text-blue-800 dark:text-blue-300">Memory Usage</span>
-                      </div>
-                      <div className="text-xl font-bold text-blue-900 dark:text-blue-100">
-                        {node.systemInfo.jvm.memory.raw["used%"].toFixed(1)}%
-                      </div>
-                      <div className="text-xs text-blue-600 dark:text-blue-400">
-                        {Math.round(node.systemInfo.jvm.memory.raw.used / (1024 * 1024 * 1024))}GB used
-                      </div>
-                    </div>
-                    
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Cpu className="w-4 h-4 text-green-600" />
-                        <span className="text-xs font-medium text-green-800 dark:text-green-300">CPU Load</span>
-                      </div>
-                      <div className="text-xl font-bold text-green-900 dark:text-green-100">
-                        {(node.systemInfo.system.systemLoadAverage * 100).toFixed(1)}%
-                      </div>
-                      <div className="text-xs text-green-600 dark:text-green-400">
-                        Load average
-                      </div>
-                    </div>
-                    
-                    <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-orange-600" />
-                        <span className="text-xs font-medium text-orange-800 dark:text-orange-300">Uptime</span>
-                      </div>
-                      <div className="text-xl font-bold text-orange-900 dark:text-orange-100">
-                        {Math.floor(node.systemInfo.jvm.jmx.upTimeMS / (1000 * 60 * 60 * 24))}d
-                      </div>
-                      <div className="text-xs text-orange-600 dark:text-orange-400">
-                        {Math.floor((node.systemInfo.jvm.jmx.upTimeMS % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))}h running
-                      </div>
-                    </div>
-                    
-                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <HardDrive className="w-4 h-4 text-purple-600" />
-                        <span className="text-xs font-medium text-purple-800 dark:text-purple-300">File Descriptors</span>
-                      </div>
-                      <div className="text-xl font-bold text-purple-900 dark:text-purple-100">
-                        {((node.systemInfo.system.openFileDescriptorCount / node.systemInfo.system.maxFileDescriptorCount) * 100).toFixed(1)}%
-                      </div>
-                      <div className="text-xs text-purple-600 dark:text-purple-400">
-                        {node.systemInfo.system.openFileDescriptorCount} open
-                      </div>
-                    </div>
-                  </div>
+      {/* Solr Nodes Overview */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-foreground">Node Details</h2>
+          <Badge variant="secondary" className="text-sm font-semibold">
+            {onlineNodes.length} of {nodes.length} nodes operational
+          </Badge>
+        </div>
 
-                  {/* System Information */}
-                  <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                    <h4 className="text-sm font-semibold text-foreground mb-3">System Information</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground mb-1">Solr Version</p>
-                        <Badge variant="outline" className="text-xs font-mono">
-                          {node.systemInfo.lucene["solr-spec-version"]}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground mb-1">Java Version</p>
-                        <Badge variant="outline" className="text-xs font-mono">
-                          {node.systemInfo.jvm.version.split(' ')[0]}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground mb-1">Node ID</p>
-                        <Badge variant="outline" className="text-xs font-mono">
-                          {node.systemInfo.node}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground mb-1">Mode</p>
-                        <Badge variant="secondary" className="text-xs">
-                          {node.systemInfo.mode}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <Button 
-                    onClick={() => navigate(`/node/${encodeURIComponent(node.id)}`)}
-                    className="w-full"
-                    size="lg"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Detailed Dashboard
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </>
-              ) : (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto">
-                      <AlertTriangle className="w-8 h-8 text-red-500" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {nodes.map((node) => (
+            <Card key={node.id} className="shadow-sm border hover:shadow-lg transition-all duration-300">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-3">
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${
+                      node.status === 'online' 
+                        ? 'bg-green-50 dark:bg-green-900/20' 
+                        : 'bg-red-50 dark:bg-red-900/20'
+                    }`}>
+                      <Server className={`w-6 h-6 ${
+                        node.status === 'online' 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`} />
                     </div>
                     <div>
-                      <h4 className="font-medium text-foreground mb-2">Node Unavailable</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {node.error || 'This node is offline or unreachable'}
-                      </p>
+                      <h3 className="text-xl font-semibold">{node.name}</h3>
+                      <p className="text-sm text-muted-foreground font-mono">{node.url}</p>
+                    </div>
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    {node.status === 'online' ? (
+                      <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    ) : (
+                      <AlertTriangle className="w-6 h-6 text-red-500" />
+                    )}
+                    <Badge variant={node.status === 'online' ? "default" : "destructive"} className="text-sm font-semibold">
+                      {node.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                {node.status === 'online' && node.systemInfo ? (
+                  <>
+                    {/* Performance Metrics Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/40 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MemoryStick className="w-5 h-5 text-blue-600" />
+                          <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">JVM Memory</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                              {node.systemInfo.jvm.memory.raw["used%"].toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-700 dark:text-blue-400">
+                            {Math.round(node.systemInfo.jvm.memory.raw.used / (1024 * 1024 * 1024))}GB of{' '}
+                            {Math.round(node.systemInfo.jvm.memory.raw.max / (1024 * 1024 * 1024))}GB
+                          </div>
+                          <div className="w-full bg-blue-200/50 dark:bg-blue-800/50 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500" 
+                              style={{ width: `${Math.min(node.systemInfo.jvm.memory.raw["used%"], 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/40 rounded-xl p-4 border border-green-200/50 dark:border-green-800/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Cpu className="w-5 h-5 text-green-600" />
+                          <span className="text-sm font-semibold text-green-800 dark:text-green-300">CPU Load</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-green-900 dark:text-green-100">
+                              {(node.systemInfo.system.systemLoadAverage * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="text-xs text-green-700 dark:text-green-400">
+                            System load average
+                          </div>
+                          <div className="w-full bg-green-200/50 dark:bg-green-800/50 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-500" 
+                              style={{ width: `${Math.min(node.systemInfo.system.systemLoadAverage * 100, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/40 rounded-xl p-4 border border-orange-200/50 dark:border-orange-800/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Clock className="w-5 h-5 text-orange-600" />
+                          <span className="text-sm font-semibold text-orange-800 dark:text-orange-300">Uptime</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                              {Math.floor(node.systemInfo.jvm.jmx.upTimeMS / (1000 * 60 * 60 * 24))}d
+                            </span>
+                            <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                              {Math.floor((node.systemInfo.jvm.jmx.upTimeMS % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))}h
+                            </span>
+                          </div>
+                          <div className="text-xs text-orange-700 dark:text-orange-400">
+                            Since last restart
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/40 rounded-xl p-4 border border-purple-200/50 dark:border-purple-800/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <HardDrive className="w-5 h-5 text-purple-600" />
+                          <span className="text-sm font-semibold text-purple-800 dark:text-purple-300">File Descriptors</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                              {((node.systemInfo.system.openFileDescriptorCount / node.systemInfo.system.maxFileDescriptorCount) * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="text-xs text-purple-700 dark:text-purple-400">
+                            {node.systemInfo.system.openFileDescriptorCount.toLocaleString()} of{' '}
+                            {node.systemInfo.system.maxFileDescriptorCount.toLocaleString()}
+                          </div>
+                          <div className="w-full bg-purple-200/50 dark:bg-purple-800/50 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500" 
+                              style={{ width: `${Math.min((node.systemInfo.system.openFileDescriptorCount / node.systemInfo.system.maxFileDescriptorCount) * 100, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Node Information Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 space-y-3">
+                        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                          <Database className="w-4 h-4" />
+                          Solr Information
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-600 dark:text-slate-400">Version:</span>
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {node.systemInfo.lucene["solr-spec-version"]}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-600 dark:text-slate-400">Node ID:</span>
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {node.systemInfo.node}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-600 dark:text-slate-400">Mode:</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {node.systemInfo.mode}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 space-y-3">
+                        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                          <Cpu className="w-4 h-4" />
+                          System Information
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-600 dark:text-slate-400">Java:</span>
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {node.systemInfo.jvm.version.split(' ')[0]}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-600 dark:text-slate-400">OS:</span>
+                            <Badge variant="outline" className="text-xs">
+                              {node.systemInfo.system.name}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-600 dark:text-slate-400">Processors:</span>
+                            <Badge variant="outline" className="text-xs">
+                              {node.systemInfo.system.processorCount}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Metrics Summary */}
+                    {node.metrics && Object.keys(node.metrics.metrics || {}).length > 0 && (
+                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-xl p-4 border border-indigo-200/50 dark:border-indigo-800/30">
+                        <h4 className="text-sm font-semibold text-indigo-800 dark:text-indigo-200 flex items-center gap-2 mb-3">
+                          <Activity className="w-4 h-4" />
+                          Core Metrics Summary
+                        </h4>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          {Object.entries(node.metrics.metrics).slice(0, 3).map(([coreName, metrics]: [string, any]) => (
+                            <div key={coreName} className="text-center">
+                              <div className="text-xs text-indigo-600 dark:text-indigo-400 mb-1 truncate" title={coreName}>
+                                {coreName}
+                              </div>
+                              <div className="text-base font-bold text-indigo-900 dark:text-indigo-100">
+                                {metrics?.['SEARCHER.searcher.numDocs']?.toLocaleString() || '0'}
+                              </div>
+                              <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                documents
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
                       <Button 
                         onClick={() => navigate(`/node/${encodeURIComponent(node.id)}`)}
-                        variant="outline"
-                        size="sm"
+                        className="flex-1"
+                        size="lg"
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                      <Button 
+                        onClick={() => navigate(`/datacenter/${encodeURIComponent(node.datacenter)}/nodes`)}
+                        variant="outline"
+                        size="lg"
+                      >
+                        <Server className="w-4 h-4 mr-2" />
+                        Node Management
                       </Button>
                     </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center space-y-4">
+                      <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto">
+                        <AlertTriangle className="w-10 h-10 text-red-500" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-foreground mb-2">Node Unavailable</h4>
+                        <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                          {node.error || 'This node is offline or unreachable. Check network connectivity and node status.'}
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                          <Button 
+                            onClick={() => navigate(`/node/${encodeURIComponent(node.id)}`)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </Button>
+                          <Button 
+                            onClick={() => fetchClusterData()}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Retry
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Empty State */}

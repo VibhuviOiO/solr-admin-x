@@ -64,3 +64,4 @@ docs/.docusaurus/
 # Backup files
 *.bak
 *.backup
+solr-web

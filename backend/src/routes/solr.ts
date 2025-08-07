@@ -64,7 +64,7 @@ function loadDatacenterConfig() {
 }
 
 const dcDataConfig = loadDatacenterConfig();
-console.log('Loaded datacenter configuration:', JSON.stringify(dcDataConfig, null, 2));
+// Configuration loaded successfully
 
 // Define types for datacenter configuration
 interface ClusterNode {
@@ -84,7 +84,7 @@ interface DataCenter {
 const SOLR_NODES: SolrNodeInfo[] = dcDataConfig.datacenters?.flatMap((dc: DataCenter, dcIndex: number) => 
   dc.nodes.map((node: ClusterNode, nodeIndex: number) => ({
     id: `${node.name}-${dc.name.toLowerCase()}`, // Generate ID from name and datacenter
-    name: `${node.name} (${dc.name})`,
+    name: node.name, // Just the node name without datacenter
     url: `http://${node.host}:${node.port}/solr`,
     datacenter: dc.name,
     host: node.host,
@@ -200,10 +200,8 @@ router.get('/system/info', async (req, res) => {
   try {
     const nodeParam = req.query.node as string
     
-    // Load datacenter configuration
-    const dcConfigPath = path.join(__dirname, '..', 'config', 'dc-data.json')
-    const dcConfigContent = fs.readFileSync(dcConfigPath, 'utf-8')
-    const dcData = JSON.parse(dcConfigContent)
+    // Load datacenter configuration using the same method as other endpoints
+    const dcData = loadDatacenterConfig()
     
     // If nodeParam is provided, try to find specific node
     if (nodeParam) {
@@ -293,8 +291,7 @@ router.get('/cluster/nodes', async (req: Request, res: Response) => {
       filteredNodes = filteredNodes.filter(node => node.default === true);
     }
     
-    console.log(`Loading ${filteredNodes.length} nodes (loadAll: ${loadAll}, datacenter: ${datacenter || 'all'})`);
-    
+    // Load nodes with filtering
     const nodesPromises = filteredNodes.map(async (node: SolrNodeInfo): Promise<SolrNodeInfo> => {
       try {
         const [systemResponse, metricsResponse] = await Promise.allSettled([
@@ -558,6 +555,20 @@ router.get('/datacenters', async (req: Request, res: Response) => {
   }
 });
 
+// Datacenter configuration endpoint (alternative path for frontend dashboard)
+router.get('/datacenter-config', async (req: Request, res: Response) => {
+  try {
+    // Return the same datacenter configuration in expected format
+    res.json(dcDataConfig);
+  } catch (error) {
+    console.error('Error fetching datacenter config:', error);
+    res.status(500).json({
+      error: 'Failed to fetch datacenter configuration',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // New simplified endpoint: Get datacenter summary using only 2 APIs
 router.get('/datacenters/summary', async (req: Request, res: Response) => {
   try {
@@ -610,11 +621,10 @@ router.get('/datacenters/summary', async (req: Request, res: Response) => {
                   actualZkNodes = zkStatus.details.length;
                   const healthyZkNodes = zkStatus.details.filter((detail: any) => detail.ok).length;
                   zkHealthy = healthyZkNodes > 0 && zkOverallStatus !== 'red';
-                  console.log(`ZooKeeper status for ${dc.name}: ${healthyZkNodes}/${actualZkNodes} healthy, status: ${zkOverallStatus}`);
                 }
               }
             } catch (zkError) {
-              console.log(`ZooKeeper health check failed for ${dc.name}: ${zkError instanceof Error ? zkError.message : 'Unknown error'}`);
+              // ZK health check failed - node will show as unhealthy
             }
           }
         }
@@ -764,6 +774,135 @@ router.get('/datacenters/:datacenter', async (req: Request, res: Response) => {
     res.status(500).json({ 
       error: `Failed to fetch datacenter ${req.params.datacenter}`,
       details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get nodes for a specific datacenter
+router.get('/datacenter/:datacenter/nodes', async (req: Request, res: Response) => {
+  try {
+    const { datacenter } = req.params;
+    const decodedDatacenter = decodeURIComponent(datacenter);
+    
+    console.log('Fetching nodes for datacenter:', decodedDatacenter);
+    console.log('Available datacenters:', dcDataConfig.datacenters?.map((dc: DataCenter) => dc.name));
+    
+    // Find the datacenter configuration
+    const dcConfig = dcDataConfig.datacenters?.find((dc: DataCenter) => 
+      dc.name.toLowerCase() === decodedDatacenter.toLowerCase()
+    );
+    
+    if (!dcConfig) {
+      console.error(`Datacenter '${decodedDatacenter}' not found`);
+      return res.status(404).json({
+        datacenter: decodedDatacenter,
+        status: 'error',
+        error: `Datacenter '${decodedDatacenter}' not found`,
+        availableDatacenters: dcDataConfig.datacenters?.map((dc: DataCenter) => dc.name) || [],
+        nodes: []
+      });
+    }
+    
+    console.log('Found datacenter config:', dcConfig.name);
+    
+    // Get nodes for this datacenter
+    const datacenterNodes = SOLR_NODES.filter(node => 
+      node.datacenter.toLowerCase() === decodedDatacenter.toLowerCase()
+    );
+    
+    console.log('Found nodes:', datacenterNodes.length);
+    
+    const nodesWithInfo = await Promise.all(
+      datacenterNodes.map(async (node: any) => {
+        try {
+          console.log(`Fetching data for node ${node.id} at ${node.url}`);
+          
+          // Fetch system info and metrics for each node
+          const [systemResponse, metricsResponse] = await Promise.allSettled([
+            axios.get(`${node.url}/admin/info/system`, { timeout: 10000 }),
+            axios.get(`${node.url}/admin/metrics`, { timeout: 10000 })
+          ]);
+          
+          let systemInfo = null;
+          let metrics = null;
+          let status: 'online' | 'offline' | 'error' = 'offline';
+          let error = null;
+          
+          // Process system info
+          if (systemResponse.status === 'fulfilled' && systemResponse.value.status === 200) {
+            const systemData = systemResponse.value.data;
+            const nodeKey = Object.keys(systemData).find(key => key !== 'responseHeader');
+            if (nodeKey) {
+              systemInfo = systemData[nodeKey];
+              status = 'online';
+              console.log(`System info for ${node.id}: OK`);
+            }
+          } else {
+            error = 'Failed to fetch system info';
+            console.error(`System info for ${node.id}: ${systemResponse.status === 'rejected' ? systemResponse.reason.message : 'Unknown error'}`);
+          }
+          
+          // Process metrics
+          if (metricsResponse.status === 'fulfilled' && metricsResponse.value.status === 200) {
+            const metricsData = metricsResponse.value.data;
+            const nodeKey = Object.keys(metricsData).find(key => key !== 'responseHeader');
+            if (nodeKey) {
+              metrics = metricsData[nodeKey];
+              console.log(`Metrics for ${node.id}: OK`);
+            }
+          } else {
+            console.error(`Metrics for ${node.id}: ${metricsResponse.status === 'rejected' ? metricsResponse.reason.message : 'Unknown error'}`);
+          }
+          
+          // If system info failed but we got metrics, try to infer some info
+          if (status === 'offline' && metrics) {
+            status = 'error';
+            error = 'System info unavailable but metrics accessible';
+          }
+          
+          // TODO: Fetch collections and cores info
+          // This would require additional Solr API calls like:
+          // - /solr/admin/collections?action=CLUSTERSTATUS
+          // - /solr/admin/cores?action=STATUS
+          const collections: string[] = [];
+          const cores: string[] = [];
+          
+          return {
+            ...node,
+            status,
+            systemInfo,
+            metrics,
+            error,
+            collections,
+            cores
+          };
+        } catch (nodeError) {
+          console.error(`Error fetching data for node ${node.id}:`, nodeError);
+          return {
+            ...node,
+            status: 'error' as const,
+            error: nodeError instanceof Error ? nodeError.message : 'Unknown error',
+            collections: [],
+            cores: []
+          };
+        }
+      })
+    );
+    
+    res.json({
+      datacenter: decodedDatacenter,
+      status: 'success',
+      nodes: nodesWithInfo
+    });
+    
+  } catch (error) {
+    console.error(`Error fetching nodes for datacenter ${req.params.datacenter}:`, error);
+    res.status(500).json({
+      datacenter: req.params.datacenter,
+      status: 'error',
+      error: `Failed to fetch nodes for datacenter ${req.params.datacenter}`,
+      details: error instanceof Error ? error.message : 'Unknown error',
+      nodes: []
     });
   }
 });
