@@ -80,16 +80,21 @@ interface DataCenter {
   nodes: ClusterNode[];
 }
 
+interface DatacenterConfig {
+  datacenters: DataCenter[];
+}
+
 // Generate SOLR_NODES from datacenter configuration
+// Fix the SOLR_NODES generation with proper typing
 const SOLR_NODES: SolrNodeInfo[] = dcDataConfig.datacenters?.flatMap((dc: DataCenter, dcIndex: number) => 
   dc.nodes.map((node: ClusterNode, nodeIndex: number) => ({
-    id: `${node.name}-${dc.name.toLowerCase()}`, // Generate ID from name and datacenter
-    name: node.name, // Just the node name without datacenter
+    id: `${node.name}-${dc.name.toLowerCase()}`,
+    name: node.name,
     url: `http://${node.host}:${node.port}/solr`,
     datacenter: dc.name,
     host: node.host,
     port: node.port,
-    default: nodeIndex === 0, // First node in each datacenter is default
+    default: nodeIndex === 0,
     status: 'offline' as const
   }))
 ) || [];
@@ -196,79 +201,81 @@ interface SolrSystemInfo {
 }
 
 // Get system info for a specific node or first available node
-router.get('/system/info', async (req, res) => {
+router.get('/system/info', async (req: Request, res: Response) => {
   try {
-    const nodeParam = req.query.node as string
+    const nodeParam = req.query.node as string;
     
     // Load datacenter configuration using the same method as other endpoints
-    const dcData = loadDatacenterConfig()
+    const dcData: DatacenterConfig = loadDatacenterConfig();
     
     // If nodeParam is provided, try to find specific node
     if (nodeParam) {
       for (const dc of dcData.datacenters) {
         for (const node of dc.nodes) {
-          if (node.id === nodeParam || node.name === nodeParam) {
+          if (node.name === nodeParam) {
+            const nodeUrl = `http://${node.host}:${node.port}/solr`;
             try {
-              const response = await axios.get(`${node.url}/admin/info/system?wt=json`)
+              const response = await axios.get(`${nodeUrl}/admin/info/system?wt=json`);
               
               const nodeInfo = {
-                id: node.id,
+                id: `${node.name}-${dc.name.toLowerCase()}`,
                 name: node.name,
-                url: node.url,
+                url: nodeUrl,
                 datacenter: dc.name,
                 status: 'online' as const,
                 systemInfo: response.data
-              }
+              };
               
-              return res.json(nodeInfo)
+              return res.json(nodeInfo);
             } catch (error) {
-              console.error(`Error fetching system info from node ${node.name}:`, error)
+              console.error(`Error fetching system info from node ${node.name}:`, error);
               
               const nodeInfo = {
-                id: node.id,
+                id: `${node.name}-${dc.name.toLowerCase()}`,
                 name: node.name,
-                url: node.url,
+                url: nodeUrl,
                 datacenter: dc.name,
                 status: 'offline' as const,
                 error: error instanceof Error ? error.message : 'Unknown error'
-              }
+              };
               
-              return res.json(nodeInfo)
+              return res.json(nodeInfo);
             }
           }
         }
       }
       
-      return res.status(404).json({ error: 'Node not found' })
+      return res.status(404).json({ error: 'Node not found' });
     }
     
     // If no specific node, get first available node (original behavior)
     for (const dc of dcData.datacenters) {
       for (const node of dc.nodes) {
+        const nodeUrl = `http://${node.host}:${node.port}/solr`;
         try {
-          const response = await axios.get(`${node.url}/admin/info/system?wt=json`)
+          const response = await axios.get(`${nodeUrl}/admin/info/system?wt=json`);
           
           const nodeInfo = {
-            id: node.id,
+            id: `${node.name}-${dc.name.toLowerCase()}`,
             name: node.name,
-            url: node.url,
+            url: nodeUrl,
             datacenter: dc.name,
             status: 'online' as const,
             systemInfo: response.data
-          }
+          };
           
-          return res.json(nodeInfo)
+          return res.json(nodeInfo);
         } catch (error) {
-          console.error(`Error fetching system info from node ${node.name}:`, error)
-          continue
+          console.error(`Error fetching system info from node ${node.name}:`, error);
+          continue;
         }
       }
     }
     
-    res.status(500).json({ error: 'No available Solr nodes found' })
+    res.status(500).json({ error: 'No available Solr nodes found' });
   } catch (error) {
-    console.error('Error in /system/info endpoint:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    console.error('Error in /system/info endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 })
 
@@ -903,6 +910,406 @@ router.get('/datacenter/:datacenter/nodes', async (req: Request, res: Response) 
       error: `Failed to fetch nodes for datacenter ${req.params.datacenter}`,
       details: error instanceof Error ? error.message : 'Unknown error',
       nodes: []
+    });
+  }
+});
+
+// Fix the properties endpoint with proper typing
+router.get('/admin/properties/:nodeId', async (req: Request, res: Response) => {
+  try {
+    const { nodeId } = req.params;
+    
+    // Find the node configuration
+    const config: DatacenterConfig = loadDatacenterConfig();
+    let nodeConfig: ClusterNode | null = null;
+    
+    // Find the node across all datacenters
+    for (const dc of config.datacenters) {
+      const node = dc.nodes.find((n: ClusterNode) => n.name === nodeId);
+      if (node) {
+        nodeConfig = node;
+        break;
+      }
+    }
+    
+    if (!nodeConfig) {
+      return res.status(404).json({ error: 'Node not found' });
+    }
+    
+    const solrUrl = `http://${nodeConfig.host}:${nodeConfig.port}/solr/admin/info/properties`;
+    
+    console.log(`Fetching properties from: ${solrUrl}`);
+    
+    const response = await axios.get(solrUrl);
+    if (!response.data) {
+      throw new Error(`Solr properties API returned empty response`);
+    }
+    
+    // Transform the properties data for easier frontend consumption
+    const properties = response.data['system.properties'] || {};
+    
+    res.json({
+      node: nodeConfig.name,
+      properties: properties,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Error fetching Solr properties:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch system properties',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Fix the security endpoint with proper typing
+router.get('/admin/security/:nodeId', async (req: Request, res: Response) => {
+  try {
+    const { nodeId } = req.params;
+    
+    // Find the node configuration
+    const config: DatacenterConfig = loadDatacenterConfig();
+    let nodeConfig: ClusterNode | null = null;
+    
+    // Find the node across all datacenters
+    for (const dc of config.datacenters) {
+      const node = dc.nodes.find((n: ClusterNode) => n.name === nodeId);
+      if (node) {
+        nodeConfig = node;
+        break;
+      }
+    }
+    
+    if (!nodeConfig) {
+      return res.status(404).json({ error: 'Node not found' });
+    }
+
+    // Define security configuration interface
+    interface SecurityConfig {
+      authentication: { enabled: boolean; scheme: string | null; realm: string | null };
+      authorization: { enabled: boolean; class: string | null };
+      ssl: { 
+        enabled: boolean;
+        clientAuth: boolean;
+        keyStore: string | null;
+        trustStore: string | null;
+      };
+    }
+
+    const security: SecurityConfig = {
+      authentication: { enabled: false, scheme: null, realm: null },
+      authorization: { enabled: false, class: null },
+      ssl: { 
+        enabled: nodeConfig.port === 8443 || nodeConfig.host.includes('https'),
+        clientAuth: false,
+        keyStore: null,
+        trustStore: null
+      }
+    };
+
+    try {
+      // Try to get system info for security detection
+      const systemUrl = `http://${nodeConfig.host}:${nodeConfig.port}/solr/admin/info/system?wt=json`;
+      const systemResponse = await axios.get(systemUrl, { timeout: 5000 });
+      
+      if (systemResponse.data?.jvm) {
+        const jvm = systemResponse.data.jvm;
+        
+        // Check JVM arguments for security indicators
+        const jvmArgs = JSON.stringify(jvm).toLowerCase();
+        
+        if (jvmArgs.includes('solr.authentication') || jvmArgs.includes('basicauth')) {
+          security.authentication.enabled = true;
+          security.authentication.scheme = 'BasicAuth';
+        }
+        
+        if (jvmArgs.includes('solr.authorization') || jvmArgs.includes('rulebasedauthorization')) {
+          security.authorization.enabled = true;
+          security.authorization.class = 'RuleBasedAuthorizationPlugin';
+        }
+
+        // SSL detection from system properties
+        if (jvmArgs.includes('ssl') || jvmArgs.includes('https') || jvmArgs.includes('keystore')) {
+          security.ssl.enabled = true;
+          if (jvmArgs.includes('clientauth')) {
+            security.ssl.clientAuth = true;
+          }
+        }
+      }
+    } catch (systemError) {
+      console.warn(`Could not fetch system info for security detection: ${systemError instanceof Error ? systemError.message : 'Unknown error'}`);
+    }
+    
+    res.json({
+      node: nodeConfig.name,
+      security: security,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Error fetching security info:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch security information',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Fix the system info endpoint with proper typing
+router.get('/system/info', async (req: Request, res: Response) => {
+  try {
+    const nodeParam = req.query.node as string;
+    
+    // Load datacenter configuration using the same method as other endpoints
+    const dcData: DatacenterConfig = loadDatacenterConfig();
+    
+    // If nodeParam is provided, try to find specific node
+    if (nodeParam) {
+      for (const dc of dcData.datacenters) {
+        for (const node of dc.nodes) {
+          if (node.name === nodeParam) {
+            const nodeUrl = `http://${node.host}:${node.port}/solr`;
+            try {
+              const response = await axios.get(`${nodeUrl}/admin/info/system?wt=json`);
+              
+              const nodeInfo = {
+                id: `${node.name}-${dc.name.toLowerCase()}`,
+                name: node.name,
+                url: nodeUrl,
+                datacenter: dc.name,
+                status: 'online' as const,
+                systemInfo: response.data
+              };
+              
+              return res.json(nodeInfo);
+            } catch (error) {
+              console.error(`Error fetching system info from node ${node.name}:`, error);
+              
+              const nodeInfo = {
+                id: `${node.name}-${dc.name.toLowerCase()}`,
+                name: node.name,
+                url: nodeUrl,
+                datacenter: dc.name,
+                status: 'offline' as const,
+                error: error instanceof Error ? error.message : 'Unknown error'
+              };
+              
+              return res.json(nodeInfo);
+            }
+          }
+        }
+      }
+      
+      return res.status(404).json({ error: 'Node not found' });
+    }
+    
+    // If no specific node, get first available node (original behavior)
+    for (const dc of dcData.datacenters) {
+      for (const node of dc.nodes) {
+        const nodeUrl = `http://${node.host}:${node.port}/solr`;
+        try {
+          const response = await axios.get(`${nodeUrl}/admin/info/system?wt=json`);
+          
+          const nodeInfo = {
+            id: `${node.name}-${dc.name.toLowerCase()}`,
+            name: node.name,
+            url: nodeUrl,
+            datacenter: dc.name,
+            status: 'online' as const,
+            systemInfo: response.data
+          };
+          
+          return res.json(nodeInfo);
+        } catch (error) {
+          console.error(`Error fetching system info from node ${node.name}:`, error);
+          continue;
+        }
+      }
+    }
+    
+    res.status(500).json({ error: 'No available Solr nodes found' });
+  } catch (error) {
+    console.error('Error in /system/info endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Logging interfaces
+interface SolrLogger {
+  name: string;
+  level: string;
+  set: boolean;
+}
+
+interface SolrLoggingResponse {
+  responseHeader: {
+    status: number;
+    QTime: number;
+  };
+  levels: string[];
+  loggers: SolrLogger[];
+  watcher: string;
+}
+
+interface NodeLoggingResponse {
+  nodeId: string;
+  nodeName: string;
+  host: string;
+  port: number;
+  status: 'online' | 'offline' | 'error';
+  loggingInfo?: {
+    levels: string[];
+    loggers: SolrLogger[];
+    watcher: string;
+    rootLogger: {
+      level: string;
+    };
+  };
+  error?: string;
+  timestamp: string;
+}
+
+// Get logging information for all nodes in a datacenter
+router.get('/datacenter/:datacenter/logging', async (req: Request, res: Response) => {
+  try {
+    const { datacenter } = req.params;
+    const decodedDatacenter = decodeURIComponent(datacenter);
+    
+    console.log('Fetching logging info for datacenter:', decodedDatacenter);
+    
+    // Find the datacenter configuration
+    const config: DatacenterConfig = loadDatacenterConfig();
+    const dcConfig = config.datacenters?.find((dc: DataCenter) => 
+      dc.name.toLowerCase() === decodedDatacenter.toLowerCase()
+    );
+    
+    if (!dcConfig) {
+      return res.status(404).json({
+        datacenter: decodedDatacenter,
+        status: 'error',
+        error: `Datacenter '${decodedDatacenter}' not found`,
+        nodes: []
+      });
+    }
+    
+    // Get logging info from all nodes in the datacenter
+    const nodeLoggingPromises = dcConfig.nodes.map(async (nodeConfig: ClusterNode): Promise<NodeLoggingResponse> => {
+      const nodeId = `${nodeConfig.name}-${decodedDatacenter.toLowerCase()}`;
+      
+      try {
+        // Get logging information directly
+        const loggingUrl = `http://${nodeConfig.host}:${nodeConfig.port}/solr/admin/info/logging?wt=json`;
+        console.log(`Fetching logging from: ${loggingUrl}`);
+        
+        const loggingResponse = await axios.get(loggingUrl, { timeout: 10000 });
+        
+        if (loggingResponse.data?.responseHeader?.status === 0) {
+          const solrLoggingData: SolrLoggingResponse = loggingResponse.data;
+          
+          // Find root logger level
+          const rootLogger = solrLoggingData.loggers.find(logger => logger.name === 'root');
+          
+          return {
+            nodeId,
+            nodeName: nodeConfig.name,
+            host: nodeConfig.host,
+            port: nodeConfig.port,
+            status: 'online',
+            loggingInfo: {
+              levels: solrLoggingData.levels || ['ALL', 'TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL', 'OFF'],
+              loggers: solrLoggingData.loggers || [],
+              watcher: solrLoggingData.watcher || 'Unknown',
+              rootLogger: {
+                level: rootLogger?.level || 'WARN'
+              }
+            },
+            timestamp: new Date().toISOString()
+          };
+        } else {
+          throw new Error('Invalid logging response from Solr');
+        }
+        
+      } catch (error) {
+        console.error(`Error fetching logging info for node ${nodeConfig.name}:`, error);
+        return {
+          nodeId,
+          nodeName: nodeConfig.name,
+          host: nodeConfig.host,
+          port: nodeConfig.port,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        };
+      }
+    });
+    
+    const nodesLogging = await Promise.all(nodeLoggingPromises);
+    
+    res.json({
+      datacenter: decodedDatacenter,
+      status: 'success',
+      nodes: nodesLogging,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error(`Error fetching logging info for datacenter ${req.params.datacenter}:`, error);
+    res.status(500).json({
+      datacenter: req.params.datacenter,
+      status: 'error',
+      error: 'Failed to fetch logging information',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      nodes: []
+    });
+  }
+});
+
+// Get specific node logging details - simplified for now as Solr doesn't provide log history by default
+router.get('/datacenter/:datacenter/logging/:nodeId', async (req: Request, res: Response) => {
+  try {
+    const { datacenter, nodeId } = req.params;
+    const decodedDatacenter = decodeURIComponent(datacenter);
+    
+    // Find the datacenter and node configuration
+    const config: DatacenterConfig = loadDatacenterConfig();
+    const dcConfig = config.datacenters?.find((dc: DataCenter) => 
+      dc.name.toLowerCase() === decodedDatacenter.toLowerCase()
+    );
+    
+    if (!dcConfig) {
+      return res.status(404).json({ error: `Datacenter '${decodedDatacenter}' not found` });
+    }
+    
+    const nodeConfig = dcConfig.nodes.find((n: ClusterNode) => n.name === nodeId);
+    if (!nodeConfig) {
+      return res.status(404).json({ error: `Node '${nodeId}' not found in datacenter '${decodedDatacenter}'` });
+    }
+    
+    // Get detailed logging configuration
+    const loggingUrl = `http://${nodeConfig.host}:${nodeConfig.port}/solr/admin/info/logging?wt=json`;
+    console.log(`Fetching detailed logging from: ${loggingUrl}`);
+    
+    const response = await axios.get(loggingUrl, { timeout: 10000 });
+    
+    if (response.data?.responseHeader?.status === 0) {
+      res.json({
+        nodeId,
+        nodeName: nodeConfig.name,
+        host: nodeConfig.host,
+        port: nodeConfig.port,
+        loggingData: response.data,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      throw new Error('Invalid logging response from Solr');
+    }
+    
+  } catch (error) {
+    console.error(`Error fetching detailed logging for node ${req.params.nodeId}:`, error);
+    res.status(500).json({
+      error: 'Failed to fetch detailed logging information',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

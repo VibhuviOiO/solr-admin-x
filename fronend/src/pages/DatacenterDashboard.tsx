@@ -19,7 +19,9 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
-  Info
+  Info,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -108,8 +110,19 @@ const DatacenterDashboard = () => {
   const [datacenterInfo, setDatacenterInfo] = useState<DatacenterInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-  const [selectedNode, setSelectedNode] = useState<SolrNode | null>(null)
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+  const [sortJvmArgs, setSortJvmArgs] = useState<boolean>(true)
   const { toast } = useToast()
+
+  const toggleNodeExpansion = (nodeKey: string) => {
+    const newExpanded = new Set(expandedNodes)
+    if (newExpanded.has(nodeKey)) {
+      newExpanded.delete(nodeKey)
+    } else {
+      newExpanded.add(nodeKey)
+    }
+    setExpandedNodes(newExpanded)
+  }
 
   const fetchDatacenterInfo = async () => {
     try {
@@ -374,10 +387,30 @@ const DatacenterDashboard = () => {
         {/* Solr Nodes Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <img src="/solr-ico.png" alt="Solr" className="w-5 h-5" />
-              Solr Nodes ({healthySolrNodes} healthy / {unhealthySolrNodes} unhealthy)
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <img src="/solr-ico.png" alt="Solr" className="w-5 h-5" />
+                Solr Nodes ({healthySolrNodes} healthy / {unhealthySolrNodes} unhealthy)
+              </CardTitle>
+              
+              {/* Right Side Badges - Show versions only */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {datacenterInfo.solrNodes.find(node => node.status === 'healthy' && node.jvm && node.lucene) && (() => {
+                  const healthyNode = datacenterInfo.solrNodes.find(node => node.status === 'healthy' && node.jvm && node.lucene)!
+                  return (
+                    <>
+                      <Badge variant="secondary" className="text-xs font-mono bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800">
+                        <img src="/solr-ico.png" alt="Solr" className="w-3 h-3 mr-1" />
+                        Solr {healthyNode.lucene!['solr-spec-version']}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs font-mono bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
+                        Lucene {healthyNode.lucene!['lucene-spec-version']}
+                      </Badge>
+                    </>
+                  )
+                })()}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -386,122 +419,226 @@ const DatacenterDashboard = () => {
                   <tr className="border-b">
                     <th className="text-left p-2">Node</th>
                     <th className="text-left p-2">Status</th>
+                    <th className="text-left p-2">Uptime</th>
                     <th className="text-left p-2">Physical Memory</th>
                     <th className="text-left p-2">Swap Space</th>
                     <th className="text-left p-2">File Descriptors</th>
                     <th className="text-left p-2">JVM Memory</th>
                     <th className="text-left p-2">Load</th>
-                    <th className="text-left p-2">Uptime</th>
                     <th className="text-left p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {datacenterInfo.solrNodes.map((node) => (
-                    <tr key={`${node.host}:${node.port}`} className="border-b hover:bg-muted/50">
-                      <td className="p-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            node.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'
-                          }`} title={node.status === 'healthy' ? 'Connected' : 'Disconnected'}></div>
-                          <span className="font-medium">{node.name}</span>
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        {node.status === 'healthy' ? (
-                          <Badge
-                            variant="default"
-                            className="text-xs font-medium bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md border-0"
-                          >
-                            CONNECTED
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="destructive"
-                            className="text-xs font-medium"
-                          >
-                            DISCONNECTED
-                          </Badge>
+                  {datacenterInfo.solrNodes.map((node) => {
+                    const nodeKey = `${node.host}:${node.port}`
+                    const isExpanded = expandedNodes.has(nodeKey)
+                    
+                    return (
+                      <>
+                        <tr key={nodeKey} className="border-b hover:bg-muted/50">
+                          <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${
+                                node.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'
+                              }`} title={node.status === 'healthy' ? 'Connected' : 'Disconnected'}></div>
+                              <span className="font-medium">{node.name}</span>
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            {node.status === 'healthy' ? (
+                              <Badge
+                                variant="default"
+                                className="text-xs font-medium bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md border-0"
+                              >
+                                CONNECTED
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="destructive"
+                                className="text-xs font-medium"
+                              >
+                                DISCONNECTED
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            {node.jvm ? (
+                              <span className="text-xs">{formatUptime(node.jvm.jmx.upTimeMS)}</span>
+                            ) : '-'}
+                          </td>
+                          <td className="p-2">
+                            {node.system ? (
+                              <div className="space-y-1">
+                                <div className="text-xs font-mono">
+                                  {formatBytes(node.system.totalPhysicalMemorySize - node.system.freePhysicalMemorySize)} / 
+                                  {formatBytes(node.system.totalPhysicalMemorySize)}
+                                </div>
+                                <Progress 
+                                  value={((node.system.totalPhysicalMemorySize - node.system.freePhysicalMemorySize) / node.system.totalPhysicalMemorySize) * 100} 
+                                  className="h-1 w-20"
+                                />
+                              </div>
+                            ) : '-'}
+                          </td>
+                          <td className="p-2">
+                            {node.system && node.system.totalSwapSpaceSize > 0 ? (
+                              <div className="space-y-1">
+                                <div className="text-xs font-mono">
+                                  {formatBytes(node.system.totalSwapSpaceSize - node.system.freeSwapSpaceSize)} / 
+                                  {formatBytes(node.system.totalSwapSpaceSize)}
+                                </div>
+                                <Progress 
+                                  value={((node.system.totalSwapSpaceSize - node.system.freeSwapSpaceSize) / node.system.totalSwapSpaceSize) * 100} 
+                                  className="h-1 w-20"
+                                />
+                              </div>
+                            ) : 'No swap'}
+                          </td>
+                          <td className="p-2">
+                            {node.system ? (
+                              <div className="space-y-1">
+                                <div className="text-xs font-mono">
+                                  {node.system.openFileDescriptorCount.toLocaleString()} / 
+                                  {node.system.maxFileDescriptorCount.toLocaleString()}
+                                </div>
+                                <Progress 
+                                  value={(node.system.openFileDescriptorCount / node.system.maxFileDescriptorCount) * 100} 
+                                  className="h-1 w-20"
+                                />
+                              </div>
+                            ) : '-'}
+                          </td>
+                          <td className="p-2">
+                            {node.jvm ? (
+                              <div className="space-y-1">
+                                <div className="text-xs font-mono">
+                                  {formatBytes(node.jvm.memory.raw.used)} / {formatBytes(node.jvm.memory.raw.max)}
+                                </div>
+                                <Progress 
+                                  value={node.jvm.memory.raw['used%']} 
+                                  className="h-1 w-20"
+                                />
+                              </div>
+                            ) : '-'}
+                          </td>
+                          <td className="p-2">
+                            {node.system ? (
+                              <span className="text-xs font-mono">{node.system.systemLoadAverage.toFixed(2)}</span>
+                            ) : '-'}
+                          </td>
+                          <td className="p-2">
+                            {node.status === 'healthy' && node.jvm && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleNodeExpansion(nodeKey)}
+                                className="text-xs flex items-center gap-1"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronDown className="w-3 h-3" />
+                                    Hide Details
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronRight className="w-3 h-3" />
+                                    JVM Details
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                        
+                        {/* Expanded JVM Details Row */}
+                        {isExpanded && node.jvm && (
+                          <tr key={`${nodeKey}-details`} className="bg-muted/30">
+                            <td colSpan={9} className="p-0">
+                              <div className="p-6 space-y-6 border-l-4 border-l-blue-500">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-semibold text-lg flex items-center gap-2">
+                                    <HardDrive className="w-5 h-5 text-slate-600" />
+                                    JVM Details - {node.name}
+                                  </h4>
+                                  
+                                  {/* Memory Details on Right Side */}
+                                  <div className="flex flex-wrap gap-2 items-center">
+                                    <Badge variant="secondary" className="text-xs font-mono bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
+                                      <MemoryStick className="w-3 h-3 mr-1" />
+                                      Used: {formatBytes(node.jvm.memory.raw.used)}
+                                    </Badge>
+                                    <Badge variant="secondary" className="text-xs font-mono bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
+                                      Total: {formatBytes(node.jvm.memory.raw.total)}
+                                    </Badge>
+                                    <Badge variant="secondary" className="text-xs font-mono bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800">
+                                      Max: {formatBytes(node.jvm.memory.raw.max)}
+                                    </Badge>
+                                    <Badge variant="secondary" className="text-xs font-mono bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 border border-cyan-200 dark:border-cyan-800">
+                                      Usage: {node.jvm.memory.raw['used%'].toFixed(1)}%
+                                    </Badge>
+                                  </div>
+                                </div>
+                                
+                                {/* JVM Info as Badges */}
+                                <div className="space-y-4">
+                                  {/* Runtime Badges */}
+                                  <div className="space-y-2">
+                                    <h5 className="font-medium text-slate-800 dark:text-slate-200">Runtime</h5>
+                                    <div className="flex flex-wrap gap-2">
+                                      <Badge variant="secondary" className="text-xs font-mono bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
+                                        <Cpu className="w-3 h-3 mr-1" />
+                                        {node.jvm.name}
+                                      </Badge>
+                                      <Badge variant="secondary" className="text-xs font-mono bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
+                                        Version: {node.jvm.version}
+                                      </Badge>
+                                      <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
+                                        {node.jvm.processors} {node.jvm.processors === 1 ? 'Processor' : 'Processors'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* JVM Command Line Arguments */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <h5 className="font-medium text-slate-800 dark:text-slate-200">JVM Arguments</h5>
+                                    <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                                      <input 
+                                        type="checkbox" 
+                                        checked={sortJvmArgs}
+                                        onChange={(e) => setSortJvmArgs(e.target.checked)}
+                                        className="w-3 h-3 rounded border border-input bg-background"
+                                      />
+                                      Sort alphabetically
+                                    </label>
+                                  </div>
+                                  <div className="max-h-48 overflow-y-auto space-y-1">
+                                    {(() => {
+                                      let args = node.jvm.jmx.commandLineArgs.slice()
+                                      if (sortJvmArgs) {
+                                        args = args.sort((a, b) => {
+                                          // Remove leading dashes for sorting comparison
+                                          const cleanA = a.replace(/^-+/, '')
+                                          const cleanB = b.replace(/^-+/, '')
+                                          return cleanA.localeCompare(cleanB)
+                                        })
+                                      }
+                                      return args.map((arg, index) => (
+                                        <div key={index} className="text-xs font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">
+                                          {arg}
+                                        </div>
+                                      ))
+                                    })()}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                      <td className="p-2">
-                        {node.system ? (
-                          <div className="space-y-1">
-                            <div className="text-xs font-mono">
-                              {formatBytes(node.system.totalPhysicalMemorySize - node.system.freePhysicalMemorySize)} / 
-                              {formatBytes(node.system.totalPhysicalMemorySize)}
-                            </div>
-                            <Progress 
-                              value={((node.system.totalPhysicalMemorySize - node.system.freePhysicalMemorySize) / node.system.totalPhysicalMemorySize) * 100} 
-                              className="h-1 w-20"
-                            />
-                          </div>
-                        ) : '-'}
-                      </td>
-                      <td className="p-2">
-                        {node.system && node.system.totalSwapSpaceSize > 0 ? (
-                          <div className="space-y-1">
-                            <div className="text-xs font-mono">
-                              {formatBytes(node.system.totalSwapSpaceSize - node.system.freeSwapSpaceSize)} / 
-                              {formatBytes(node.system.totalSwapSpaceSize)}
-                            </div>
-                            <Progress 
-                              value={((node.system.totalSwapSpaceSize - node.system.freeSwapSpaceSize) / node.system.totalSwapSpaceSize) * 100} 
-                              className="h-1 w-20"
-                            />
-                          </div>
-                        ) : 'No swap'}
-                      </td>
-                      <td className="p-2">
-                        {node.system ? (
-                          <div className="space-y-1">
-                            <div className="text-xs font-mono">
-                              {node.system.openFileDescriptorCount.toLocaleString()} / 
-                              {node.system.maxFileDescriptorCount.toLocaleString()}
-                            </div>
-                            <Progress 
-                              value={(node.system.openFileDescriptorCount / node.system.maxFileDescriptorCount) * 100} 
-                              className="h-1 w-20"
-                            />
-                          </div>
-                        ) : '-'}
-                      </td>
-                      <td className="p-2">
-                        {node.jvm ? (
-                          <div className="space-y-1">
-                            <div className="text-xs font-mono">
-                              {formatBytes(node.jvm.memory.raw.used)} / {formatBytes(node.jvm.memory.raw.max)}
-                            </div>
-                            <Progress 
-                              value={node.jvm.memory.raw['used%']} 
-                              className="h-1 w-20"
-                            />
-                          </div>
-                        ) : '-'}
-                      </td>
-                      <td className="p-2">
-                        {node.system ? (
-                          <span className="text-xs font-mono">{node.system.systemLoadAverage.toFixed(2)}</span>
-                        ) : '-'}
-                      </td>
-                      <td className="p-2">
-                        {node.jvm ? (
-                          <span className="text-xs">{formatUptime(node.jvm.jmx.upTimeMS)}</span>
-                        ) : '-'}
-                      </td>
-                      <td className="p-2">
-                        {node.status === 'healthy' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedNode(node)}
-                            className="text-xs"
-                          >
-                            JVM Details
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                      </>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -586,96 +723,6 @@ const DatacenterDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* JVM Details Modal/Panel */}
-        {selectedNode && selectedNode.jvm && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <HardDrive className="w-5 h-5 text-slate-600" />
-                JVM Details - {selectedNode.name}
-              </CardTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSelectedNode(null)}
-              >
-                Close
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              
-              {/* JVM Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Runtime</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Name:</span>
-                      <span className="font-mono">{selectedNode.jvm.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Version:</span>
-                      <span className="font-mono">{selectedNode.jvm.version}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Processors:</span>
-                      <span>{selectedNode.jvm.processors}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Versions */}
-                {selectedNode.lucene && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Versions</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Solr:</span>
-                        <span className="font-mono">{selectedNode.lucene['solr-spec-version']}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Lucene:</span>
-                        <span className="font-mono">{selectedNode.lucene['lucene-spec-version']}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Memory Details */}
-                <div className="space-y-2">
-                  <h4 className="font-medium">Memory Details</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Used:</span>
-                      <span className="font-mono">{formatBytes(selectedNode.jvm.memory.raw.used)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total:</span>
-                      <span className="font-mono">{formatBytes(selectedNode.jvm.memory.raw.total)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Max:</span>
-                      <span className="font-mono">{formatBytes(selectedNode.jvm.memory.raw.max)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* JVM Command Line Arguments */}
-              <div className="space-y-2">
-                <h4 className="font-medium">JVM Arguments</h4>
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {selectedNode.jvm.jmx.commandLineArgs.map((arg, index) => (
-                    <div key={index} className="text-xs font-mono bg-muted p-2 rounded">
-                      {arg}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </DashboardLayout>
   );
