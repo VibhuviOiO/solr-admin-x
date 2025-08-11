@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { 
@@ -19,28 +19,14 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-interface SolrLogger {
-  name: string
-  level: string
-  set: boolean
-}
-
-interface SolrLoggingInfo {
-  loggers: SolrLogger[]
-  levels: string[]
-  watcher: string
-  rootLogger: {
-    level: string
-  }
-}
-
+// Use the correct interface that matches your backend response
 interface NodeLoggingInfo {
   nodeId: string
   nodeName: string
   host: string
   port: number
   status: 'online' | 'offline' | 'error'
-  loggingInfo?: SolrLoggingInfo
+  loggingInfo?: any // Changed from loggingData to loggingInfo
   error?: string
   timestamp: string
 }
@@ -70,7 +56,7 @@ const DatacenterLogging = () => {
   const [refreshInterval, setRefreshInterval] = useState<number>(0)
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-  const [levelFilter, setLevelFilter] = useState<string>('ALL')
+  const [selectedLevels, setSelectedLevels] = useState<string[]>(['ALL'])
   const { toast } = useToast()
 
   // Auto-refresh effect
@@ -88,6 +74,7 @@ const DatacenterLogging = () => {
     }
   }, [autoRefresh, refreshInterval])
 
+  // Use your existing working API endpoint exactly as it was
   const fetchNodesLogging = async (showToast = true) => {
     try {
       setLoading(true)
@@ -96,10 +83,13 @@ const DatacenterLogging = () => {
         throw new Error('No datacenter specified')
       }
       
+      // Call your existing backend API that was already working
       const response = await fetch(`http://localhost:3001/api/solr/datacenter/${encodeURIComponent(datacenter)}/logging`)
       
       if (response.ok) {
         const data: DatacenterLoggingResponse = await response.json()
+        console.log('API Response:', JSON.stringify(data, null, 2)) // Better debug log
+        
         setNodes(data.nodes)
         
         // Auto-select first online node
@@ -111,9 +101,10 @@ const DatacenterLogging = () => {
         setLastRefresh(new Date())
         
         if (showToast) {
+          const onlineCount = data.nodes.filter(n => n.status === 'online').length
           toast({
-            title: "Logging information loaded",
-            description: `Found ${data.nodes.length} nodes in ${datacenter}`,
+            title: "Logging information updated",
+            description: `${onlineCount} of ${data.nodes.length} nodes online in ${datacenter}`,
           })
         }
       } else {
@@ -154,33 +145,133 @@ const DatacenterLogging = () => {
     setAutoRefresh(!autoRefresh)
   }
 
-  const getLevelBadgeColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case 'error':
-      case 'fatal':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-      case 'warn':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-      case 'info':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-      case 'debug':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-      case 'trace':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-      case 'all':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-      case 'off':
-        return 'bg-gray-300 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+  const handleLevelChange = (level: string, checked: boolean) => {
+    if (level === 'ALL') {
+      setSelectedLevels(checked ? ['ALL'] : [])
+    } else {
+      setSelectedLevels(prev => {
+        const filtered = prev.filter(l => l !== 'ALL')
+        if (checked) {
+          return [...filtered, level]
+        } else {
+          return filtered.filter(l => l !== level)
+        }
+      })
     }
   }
 
-  const getFilteredLoggers = (loggers: SolrLogger[]) => {
-    if (levelFilter === 'ALL') {
-      return loggers
+  const getLevelBadgeVariant = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'error':
+      case 'fatal':
+        return 'destructive'
+      case 'warn':
+        return 'secondary'
+      case 'info':
+        return 'default'
+      case 'debug':
+        return 'outline'
+      case 'trace':
+        return 'outline'
+      default:
+        return 'outline'
     }
-    return loggers.filter(logger => logger.level === levelFilter)
+  }
+
+  const getLogsFromNode = (node: NodeLoggingInfo) => {
+    console.log('Getting logs from node:', node.nodeName, 'loggingInfo:', node.loggingInfo)
+    
+    // Check loggingInfo instead of loggingData
+    if (!node.loggingInfo) {
+      console.log('No loggingInfo found for node:', node.nodeName)
+      return []
+    }
+    
+    // Try different possible structures
+    const loggingInfo = node.loggingInfo
+    
+    // If it's directly an array of logs
+    if (Array.isArray(loggingInfo)) {
+      console.log('Found array of logs:', loggingInfo.length)
+      return loggingInfo
+    }
+    
+    // If it has a logs property
+    if (loggingInfo.logs && Array.isArray(loggingInfo.logs)) {
+      console.log('Found logs property:', loggingInfo.logs.length)
+      return loggingInfo.logs
+    }
+    
+    // If it has loggers with events/messages
+    if (loggingInfo.loggers && Array.isArray(loggingInfo.loggers)) {
+      console.log('Found loggers, checking for log entries')
+      // Look for actual log entries in the loggers structure
+      const logs = []
+      for (const logger of loggingInfo.loggers) {
+        if (logger.events && Array.isArray(logger.events)) {
+          logs.push(...logger.events)
+        }
+        if (logger.messages && Array.isArray(logger.messages)) {
+          logs.push(...logger.messages)
+        }
+      }
+      console.log('Extracted logs from loggers:', logs.length)
+      return logs
+    }
+    
+    // If it's an object with potential log entries
+    if (typeof loggingInfo === 'object') {
+      console.log('Checking object structure for logs')
+      // Look for properties that might contain log entries
+      const possibleLogArrays = Object.values(loggingInfo).filter((value: any) => 
+        Array.isArray(value) && value.length > 0 && 
+        value[0] && typeof value[0] === 'object' && 
+        (value[0].time || value[0].timestamp || value[0].level || value[0].message)
+      )
+      
+      if (possibleLogArrays.length > 0) {
+        console.log('Found possible log arrays:', possibleLogArrays.length)
+        return possibleLogArrays.flat()
+      }
+      
+      // Look for individual log entries as object values
+      const logEntries = Object.values(loggingInfo).filter((item: any) => 
+        item && typeof item === 'object' && 
+        (item.time || item.timestamp) && 
+        (item.level || item.severity) && 
+        item.message
+      )
+      
+      if (logEntries.length > 0) {
+        console.log('Found individual log entries:', logEntries.length)
+        return logEntries
+      }
+    }
+    
+    console.log('No logs found in structure:', typeof loggingInfo)
+    return []
+  }
+
+  const getFilteredLogs = (logs: any[]) => {
+    if (selectedLevels.includes('ALL') || selectedLevels.length === 0) {
+      return logs
+    }
+    return logs.filter(log => selectedLevels.includes(log.level || log.severity))
+  }
+
+  const formatTime = (timeStr: string) => {
+    try {
+      const date = new Date(timeStr)
+      return date.toLocaleString()
+    } catch {
+      return timeStr
+    }
+  }
+
+  const extractLoggerName = (fullLogger: string) => {
+    if (!fullLogger) return '-'
+    const parts = fullLogger.split('.')
+    return parts[parts.length - 1]
   }
 
   useEffect(() => {
@@ -262,7 +353,39 @@ const DatacenterLogging = () => {
           </div>
         </div>
 
-        {/* Node Tabs with inline information */}
+        {/* Log Level Filters */}
+        <div className="flex items-center gap-4 flex-wrap p-4 bg-muted/30 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filter by Log Level:</span>
+          </div>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            {LOG_LEVELS.map(level => (
+              <div key={level} className="flex items-center gap-2">
+                <Checkbox
+                  id={level}
+                  checked={selectedLevels.includes(level)}
+                  onCheckedChange={(checked) => handleLevelChange(level, checked as boolean)}
+                />
+                <label 
+                  htmlFor={level} 
+                  className="text-sm cursor-pointer hover:text-primary"
+                >
+                  <Badge variant={getLevelBadgeVariant(level)} className="text-xs">
+                    {level}
+                  </Badge>
+                </label>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-xs text-muted-foreground ml-auto">
+            {selectedLevels.length === 0 || selectedLevels.includes('ALL') ? 'All levels' : `${selectedLevels.length} level(s) selected`}
+          </div>
+        </div>
+
+        {/* Node Tabs */}
         <Tabs value={selectedNode} onValueChange={setSelectedNode}>
           <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${nodes.length}, 1fr)` }}>
             {nodes.map((node) => (
@@ -272,140 +395,136 @@ const DatacenterLogging = () => {
                 ) : (
                   <AlertTriangle className="w-4 h-4 text-red-500" />
                 )}
-                {node.nodeName}
-                <Badge variant={node.status === 'online' ? 'secondary' : 'destructive'} className="text-xs">
+                <span className="font-medium">{node.nodeName}</span>
+                <Badge 
+                  variant={node.status === 'online' ? 'secondary' : 'destructive'} 
+                  className="text-xs"
+                >
                   {node.status}
                 </Badge>
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {nodes.map((node) => (
-            <TabsContent key={node.nodeId} value={node.nodeId} className="space-y-6">
-              {node.status === 'online' ? (
-                <>
-                  {/* Node Info and Logger Configuration */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Server className="w-5 h-5" />
-                          <CardTitle>Logger Configuration</CardTitle>
+          {nodes.map((node) => {
+            const logs = getLogsFromNode(node)
+            const filteredLogs = getFilteredLogs(logs)
+            
+            return (
+              <TabsContent key={node.nodeId} value={node.nodeId} className="space-y-4">
+                {node.status === 'online' ? (
+                  <>
+                    {/* Always show the raw data for debugging */}
+                    <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                      <strong>Debug - Raw loggingInfo structure:</strong>
+                      <pre className="mt-1 whitespace-pre-wrap">
+                        {JSON.stringify(node.loggingInfo, null, 2)}
+                      </pre>
+                    </div>
+                    
+                    {logs.length > 0 ? (
+                      <div className="space-y-4">
+                        {/* Debug info */}
+                        <div className="text-xs text-muted-foreground">
+                          Debug: Found {logs.length} logs, showing {filteredLogs.length} after filtering
                         </div>
-                        <div className="flex items-center gap-3">
-                          {/* Root Logger Level Badge */}
-                          {node.loggingInfo && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Root:</span>
-                              <Badge className={getLevelBadgeColor(node.loggingInfo.rootLogger.level)}>
-                                {node.loggingInfo.rootLogger.level}
-                              </Badge>
-                            </div>
-                          )}
-                          
-                          {/* Log Watcher Badge */}
-                          {node.loggingInfo && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Watcher:</span>
-                              <Badge variant="outline">{node.loggingInfo.watcher}</Badge>
-                            </div>
-                          )}
-                          
-                          {/* Filter Control */}
-                          <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-muted-foreground" />
-                            <Select value={levelFilter} onValueChange={setLevelFilter}>
-                              <SelectTrigger className="w-24">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {LOG_LEVELS.map(level => (
-                                  <SelectItem key={level} value={level}>
-                                    {level}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        
+                        {/* Status Header */}
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-xl font-semibold flex items-center gap-2">
+                            <Server className="w-5 h-5" />
+                            Recent Logs - {node.nodeName}
+                          </h2>
+                          <div className="text-sm text-muted-foreground">
+                            Showing {filteredLogs.length} of {logs.length} log entries
+                          </div>
+                        </div>
+
+                        {/* Logs Table */}
+                        <div className="border rounded-lg overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-muted/50">
+                                <tr>
+                                  <th className="text-left p-3 font-medium">Time (Local)</th>
+                                  <th className="text-left p-3 font-medium">Level</th>
+                                  <th className="text-left p-3 font-medium">Core</th>
+                                  <th className="text-left p-3 font-medium">Logger</th>
+                                  <th className="text-left p-3 font-medium">Message</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredLogs.length > 0 ? (
+                                  filteredLogs.map((log: any, index: number) => (
+                                    <tr key={index} className="border-t hover:bg-muted/30">
+                                      <td className="p-3 text-sm font-mono whitespace-nowrap">
+                                        {formatTime(log.time || log.timestamp || 'N/A')}
+                                      </td>
+                                      <td className="p-3">
+                                        <Badge variant={getLevelBadgeVariant(log.level || log.severity)} className="text-xs">
+                                          {log.level || log.severity || 'UNKNOWN'}
+                                        </Badge>
+                                      </td>
+                                      <td className="p-3 text-sm font-mono">
+                                        {log.core || log.collection || '-'}
+                                      </td>
+                                      <td className="p-3 text-sm font-mono">
+                                        {extractLoggerName(log.logger || log.category || '-')}
+                                      </td>
+                                      <td className="p-3 text-sm max-w-md">
+                                        <div className="truncate" title={log.message || log.text || 'No message'}>
+                                          {log.message || log.text || 'No message'}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                                      <Filter className="w-12 h-12 mx-auto mb-3" />
+                                      <div className="text-sm font-medium mb-1">No logs match the filter</div>
+                                      <div className="text-xs">Try selecting "ALL" to see all log levels</div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </div>
-                      <CardDescription>
-                        Showing {node.loggingInfo ? getFilteredLoggers(node.loggingInfo.loggers).length : 0} of {node.loggingInfo?.loggers.length || 0} loggers
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {node.loggingInfo && (
-                        <div className="space-y-1 max-h-96 overflow-y-auto">
-                          {getFilteredLoggers(node.loggingInfo.loggers).length > 0 ? (
-                            getFilteredLoggers(node.loggingInfo.loggers)
-                              .sort((a, b) => {
-                                // Sort root logger first, then alphabetically
-                                if (a.name === 'root') return -1;
-                                if (b.name === 'root') return 1;
-                                return a.name.localeCompare(b.name);
-                              })
-                              .map((logger, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-mono text-sm truncate" title={logger.name}>
-                                    {logger.name === 'root' ? (
-                                      <span className="font-bold text-primary">root</span>
-                                    ) : (
-                                      logger.name
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 ml-4">
-                                  <Badge className={getLevelBadgeColor(logger.level)}>
-                                    {logger.level}
-                                  </Badge>
-                                  {logger.set && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      SET
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8">
-                              <Filter className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                              <div className="text-sm font-medium text-muted-foreground mb-1">
-                                No loggers match the filter
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Select "ALL" to see all loggers
-                              </div>
-                            </div>
-                          )}
+                    ) : (
+                      <div className="text-center py-12 space-y-4">
+                        <FileText className="w-16 h-16 text-muted-foreground mx-auto" />
+                        <div>
+                          <h3 className="text-lg font-semibold">No Logs Available</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            No recent log entries found for this node
+                          </p>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </>
-              ) : (
-                <div className="text-center py-12 space-y-4">
-                  <AlertTriangle className="w-16 h-16 text-destructive mx-auto" />
-                  <div>
-                    <h3 className="text-lg font-semibold">Node Unavailable</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {node.error || 'This node is currently offline or unreachable'}
-                    </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-12 space-y-4">
+                    <AlertTriangle className="w-16 h-16 text-destructive mx-auto" />
+                    <div>
+                      <h3 className="text-lg font-semibold">Node Unavailable</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {node.error || 'This node is currently offline or unreachable'}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => fetchNodesLogging()}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Retry Connection
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => fetchNodesLogging()}
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Retry Connection
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-          ))}
+                )}
+              </TabsContent>
+            )
+          })}
         </Tabs>
       </div>
     </DashboardLayout>

@@ -274,13 +274,13 @@ const DatacenterSecurity = () => {
                 
                 <div className="bg-red-100 dark:bg-red-900/50 p-3 rounded-lg">
                   <code className="text-xs font-mono text-red-800 dark:text-red-200 block whitespace-pre-wrap">
-                    {`bin/solr auth enable --type basicAuth --prompt true -z ${zkConnectionString}`}
+                    {`bin/solr auth enable --type=basicAuth --prompt=true -z${zkConnectionString}`}
                   </code>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="mt-2 h-6 px-2 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800"
-                    onClick={() => copyToClipboard(`bin/solr auth enable --type basicAuth --prompt true -z ${zkConnectionString}`, 'Authentication command')}
+                    onClick={() => copyToClipboard(`bin/solr auth enable --type=basicAuth --prompt=true -z${zkConnectionString}`, 'Authentication command')}
                   >
                     <Copy className="w-3 h-3 mr-1" />
                     Copy Command

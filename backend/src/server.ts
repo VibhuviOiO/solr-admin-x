@@ -2,7 +2,19 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+
 import solrRoutes from './routes/solr';
+import loggingRoutes from './routes/logging';
+import loggingLevelsRoutes from './routes/loggingLevels';
+import securityRoutes from './routes/security';
+import metricsRoutes from './routes/metrics';
+
+import zookeeperTreeRoutes from './routes/zookeeperTree';
+import zookeeperStatusRoutes from './routes/zookeeperStatus';
+
+import schemaDesignerRouter from './routes/schemaDesigner';
+import solrInfoPropertiesRouter from './routes/solrInfoProperties';
+import infoThreadsRouter from './routes/infoThreads';
 
 dotenv.config();
 
@@ -15,6 +27,15 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/solr', solrRoutes);
+app.use('/api/solr/logging', loggingRoutes);
+app.use('/api/solr/logging', loggingLevelsRoutes);
+app.use('/api/security', securityRoutes);
+app.use('/api/solr', metricsRoutes);
+app.use('/api/solr', zookeeperTreeRoutes);
+app.use('/api/solr', zookeeperStatusRoutes);
+app.use('/api/schema-designer', schemaDesignerRouter);
+app.use('/api/solr', solrInfoPropertiesRouter);
+app.use('/api', infoThreadsRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

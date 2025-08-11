@@ -1,3 +1,4 @@
+
 import express, { Request, Response } from 'express';
 import axios from 'axios';
 import * as fs from 'fs';
@@ -7,59 +8,16 @@ const router = express.Router();
 
 // Load datacenter configuration from environment or file
 function loadDatacenterConfig() {
-  // Option 1: Load from environment variable (JSON string)
-  if (process.env.DC_CONFIG_JSON) {
-    try {
-      return JSON.parse(process.env.DC_CONFIG_JSON);
-    } catch (error) {
-      console.error('Error parsing DC_CONFIG_JSON:', error);
-      throw new Error('Invalid DC_CONFIG_JSON format');
-    }
-  }
-
-  // Option 2: Load from custom file path (DC_CONFIG_PATH is required)
   if (!process.env.DC_CONFIG_PATH) {
     throw new Error('DC_CONFIG_PATH environment variable is required. Please set it to point to your datacenter configuration file.');
   }
-  
   const configPath = process.env.DC_CONFIG_PATH;
-  
   try {
     const dcDataRaw = fs.readFileSync(configPath, 'utf8');
     return JSON.parse(dcDataRaw);
   } catch (error) {
     console.error(`Error loading datacenter config from ${configPath}:`, error);
-    // Fallback to sample configuration for development
-    console.warn('Using sample configuration. Create a proper config file and set DC_CONFIG_PATH.');
-    return {
-      datacenters: [
-        {
-          name: "APAC Singapore",
-          default: true,
-          zookeeperNodes: [
-            { host: "localhost", port: 2181 },
-            { host: "localhost", port: 2182 },
-            { host: "localhost", port: 2183 }
-          ],
-          nodes: [
-            { name: "solr1", host: "localhost", port: 8983 },
-            { name: "solr2", host: "localhost", port: 8982 }
-          ]
-        },
-        {
-          name: "APAC Tokyo",
-          zookeeperNodes: [
-            { host: "localhost", port: 5181 },
-            { host: "localhost", port: 4182 },
-            { host: "localhost", port: 5183 }
-          ],
-          nodes: [
-            { name: "solr1_dc2", host: "localhost", port: 8883 },
-            { name: "solr2_dc2", host: "localhost", port: 8882 }
-          ]
-        }
-      ]
-    };
+    throw new Error(`Failed to load datacenter config from ${configPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -124,7 +82,7 @@ interface SolrMetrics {
 interface SolrSystemInfo {
   responseHeader: {
     status: number;
-    QTime: number;
+  // ...existing code...
   };
   mode: string;
   zkHost?: string;
@@ -1145,7 +1103,7 @@ interface SolrLogger {
 interface SolrLoggingResponse {
   responseHeader: {
     status: number;
-    QTime: number;
+  // ...existing code...
   };
   levels: string[];
   loggers: SolrLogger[];
