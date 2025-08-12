@@ -14,6 +14,7 @@ import DatacenterDashboard from "./pages/DatacenterDashboard";
 import DatacenterNodes from "./pages/DatacenterNodes";
 import DatacenterSecurity from "./pages/DatacenterSecurity";
 import DatacenterLogging from "./pages/DatacenterLogging";
+import LoggingLevel from "./pages/LoggingLevel";
 import DatacenterJavaProperties from "./pages/DatacenterJavaProperties";
 import DatacenterThreadDump from "./pages/DatacenterThreadDump";
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/datacenter/:datacenter/nodes" element={<DatacenterNodes />} />
           <Route path="/datacenter/:datacenter/security" element={<DatacenterSecurity />} />
           <Route path="/datacenter/:datacenter/logging" element={<DatacenterLogging />} />
+          <Route path="/datacenter/:datacenter/logging-level" element={<LoggingLevel />} />
           <Route path="/datacenter/:datacenter/java-properties" element={<DatacenterJavaProperties />} />
           <Route path="/datacenter/:datacenter/thread-dump" element={<DatacenterThreadDump />} />
           <Route path="/node/:nodeId" element={<NodeDetail />} />

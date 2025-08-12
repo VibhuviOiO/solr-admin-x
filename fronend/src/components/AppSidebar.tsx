@@ -155,7 +155,14 @@ export function AppSidebar() {
     {
       title: "Logging",
       icon: FileText,
-      path: "/logging"
+      path: "/logging",
+      children: [
+        {
+          title: "Level",
+          icon: FileText,
+          path: "/logging-level"
+        }
+      ]
     },
     {
       title: "Java Properties",
@@ -255,25 +262,64 @@ export function AppSidebar() {
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-1 space-y-1">
                         {datacenterMenuItems.map((item) => {
-                          // Generate datacenter-specific route
                           const linkPath = `/datacenter/${datacenter.name}${item.path}`
-
-                          return (
-                            <div key={item.path} className="pl-8">
-                              <NavLink
-                                to={linkPath}
-                                className={({ isActive }) =>
-                                  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
-                                    ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/20 dark:text-blue-200'
-                                    : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                  }`
-                                }
-                              >
-                                <item.icon className="w-4 h-4" />
-                                {item.title}
-                              </NavLink>
-                            </div>
-                          )
+                          if (!item.children) {
+                            return (
+                              <div key={item.path} className="pl-8">
+                                <NavLink
+                                  to={linkPath}
+                                  className={({ isActive }) =>
+                                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
+                                      ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/20 dark:text-blue-200'
+                                      : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                    }`
+                                  }
+                                >
+                                  <item.icon className="w-4 h-4" />
+                                  {item.title}
+                                </NavLink>
+                              </div>
+                            )
+                          } else {
+                            // Render parent and children (submenu)
+                            return (
+                              <div key={item.path} className="pl-8">
+                                <NavLink
+                                  to={linkPath}
+                                  className={({ isActive }) =>
+                                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
+                                      ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/20 dark:text-blue-200'
+                                      : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                    }`
+                                  }
+                                >
+                                  <item.icon className="w-4 h-4" />
+                                  {item.title}
+                                </NavLink>
+                                {/* Submenu */}
+                                <div className="pl-6 mt-1 space-y-1">
+                                  {item.children.map((child) => {
+                                    const childPath = `/datacenter/${datacenter.name}${child.path}`
+                                    return (
+                                      <NavLink
+                                        key={child.path}
+                                        to={childPath}
+                                        className={({ isActive }) =>
+                                          `flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${isActive
+                                            ? 'bg-blue-50 text-blue-900 dark:bg-blue-900/10 dark:text-blue-200'
+                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                          }`
+                                        }
+                                      >
+                                        <child.icon className="w-3 h-3" />
+                                        {child.title}
+                                      </NavLink>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )
+                          }
                         })}
                       </CollapsibleContent>
                     </Collapsible>
