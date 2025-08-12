@@ -255,20 +255,18 @@ const DatacenterThreadDump = () => {
               </Button>
             </div>
           </div>
-          {/* Horizontal line for separation */}
-          <hr className="my-3 border-t border-border/60" />
         </div>
 
         {/* Thread dump table for selected node */}
-        <div className="overflow-x-auto border border-border rounded-lg">
+        <div className="overflow-x-auto">
           {threadData.loading ? (
             <div className="p-6 text-muted-foreground">Loading thread dump...</div>
           ) : threadData.error ? (
             <div className="p-6 text-red-600">{threadData.error}</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr className="border-b">
+            <table className="w-full text-sm border-0 rounded-none">
+              <thead className="bg-muted/50 border-0 rounded-none">
+                <tr className="border-b-0">
                   <th className="text-left p-3 w-8"></th>
                   <th className="text-left p-3">Name</th>
                   <th
@@ -326,7 +324,7 @@ const DatacenterThreadDump = () => {
                     const isExpanded = expanded.has(thread.id)
                     return (
                       <>
-                        <tr key={thread.id} className="border-b hover:bg-muted/50">
+                        <tr key={thread.id} className="hover:bg-muted/50">
                           <td className="p-3 align-top">
                             <button
                               className="focus:outline-none"
@@ -357,7 +355,7 @@ const DatacenterThreadDump = () => {
                                   <><span className="font-semibold ml-2">Waiting for:</span> <span className="font-mono">{thread["lock-waiting"].name} ({thread["lock-waiting"].owner || "unknown"})</span></>
                                 )}
                               </div>
-                              <div className="bg-muted rounded p-2 overflow-x-auto">
+                              <div className="bg-muted p-2 overflow-x-auto">
                                 <pre className="text-xs leading-tight font-mono text-gray-800 dark:text-gray-200">
                                   {thread.stackTrace.map((line, idx) => (
                                     <div key={idx}>{line}</div>

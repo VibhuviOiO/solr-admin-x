@@ -106,7 +106,7 @@ const DatacenterJavaProperties = () => {
             <Coffee className="w-8 h-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">Java Properties</h1>
-              <p className="text-muted-foreground">{datacenter} Datacenter Java Configuration</p>
+              <p className="text-muted-foreground"> Datacenter Java Configuration</p>
             </div>
           </div>
           
@@ -130,7 +130,7 @@ const DatacenterJavaProperties = () => {
             <Coffee className="w-8 h-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">Java Properties</h1>
-              <p className="text-muted-foreground">{datacenter} Datacenter Java Configuration</p>
+              <p className="text-muted-foreground">Datacenter Java Configuration</p>
             </div>
           </div>
           
@@ -179,85 +179,79 @@ const DatacenterJavaProperties = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Coffee className="w-8 h-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Java Properties</h1>
-              <p className="text-muted-foreground">{datacenter} Datacenter Java Configuration</p>
+        {/* Header - match Thread Dump style, align with table */}
+        <div className="px-1 pt-2 pb-1">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+            <div className="flex items-center gap-4 min-w-0 pb-1">
+              <Coffee className="w-8 h-8 text-primary shrink-0" />
+              <div>
+                <h1 className="text-3xl font-bold leading-tight tracking-tight truncate">Java Properties</h1>
+                <span className="text-sm text-muted-foreground truncate">Datacenter Java Configuration</span>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={sortProperties}
-                onChange={(e) => setSortProperties(e.target.checked)}
-                className="w-4 h-4 rounded border border-input bg-background"
-              />
-              Sort alphabetically
-            </label>
-            <Button onClick={fetchNodesAndProperties} variant="outline">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-3 pb-1 md:pb-0">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={sortProperties}
+                  onChange={(e) => setSortProperties(e.target.checked)}
+                  className="w-4 h-4 rounded border border-input bg-background"
+                />
+                Sort alphabetically
+              </label>
+              <Button onClick={fetchNodesAndProperties} variant="outline" className="h-9 px-4 text-sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Properties Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Java System Properties Comparison</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-semibold bg-muted/50">JVM Property</th>
-                    {onlineNodes.map(node => (
-                      <th key={node.name} className="text-left p-3 font-semibold bg-muted/50 min-w-[200px]">
-                        {node.name}
-                        <div className="text-xs font-normal text-muted-foreground mt-1">
-                          ({nodeProperties[node.name] ? Object.keys(nodeProperties[node.name].properties).length : 0} properties)
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedPropertyKeys.map((propertyKey, index) => (
-                    <tr key={propertyKey} className={`border-b hover:bg-muted/30 ${index % 2 === 0 ? 'bg-muted/10' : ''}`}>
-                      <td className="p-3 font-mono text-xs font-medium text-blue-700 dark:text-blue-300 border-r">
-                        <div title={propertyKey} className="truncate max-w-[300px]">
-                          {propertyKey}
+        {/* Properties Table - align with header, no extra spacing */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-0 rounded-none">
+            <thead className="bg-muted/50 border-0 rounded-none">
+              <tr className="border-b-0">
+                <th className="text-left p-3 font-semibold bg-muted/50">JVM Property</th>
+                {onlineNodes.map(node => (
+                  <th key={node.name} className="text-left p-3 font-semibold bg-muted/50 min-w-[200px]">
+                    {node.name}
+                    <div className="text-xs font-normal text-muted-foreground mt-1">
+                      ({nodeProperties[node.name] ? Object.keys(nodeProperties[node.name].properties).length : 0} properties)
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPropertyKeys.map((propertyKey, index) => (
+                <tr key={propertyKey} className={`hover:bg-muted/30 ${index % 2 === 0 ? 'bg-muted/10' : ''}`}>
+                  <td className="p-3 font-mono text-xs font-medium text-blue-700 dark:text-blue-300">
+                    <div title={propertyKey} className="truncate max-w-[300px]">
+                      {propertyKey}
+                    </div>
+                  </td>
+                  {onlineNodes.map(node => {
+                    const nodeProps = nodeProperties[node.name]
+                    const value = nodeProps?.properties[propertyKey] || '-'
+                    const truncatedValue = value === '-' ? '-' : truncateValue(value)
+                    
+                    return (
+                      <td key={node.name} className="p-3 font-mono text-xs">
+                        <div 
+                          title={value} 
+                          className="truncate max-w-[200px] cursor-help"
+                        >
+                          {truncatedValue}
                         </div>
                       </td>
-                      {onlineNodes.map(node => {
-                        const nodeProps = nodeProperties[node.name]
-                        const value = nodeProps?.properties[propertyKey] || '-'
-                        const truncatedValue = value === '-' ? '-' : truncateValue(value)
-                        
-                        return (
-                          <td key={node.name} className="p-3 font-mono text-xs border-r">
-                            <div 
-                              title={value} 
-                              className="truncate max-w-[200px] cursor-help"
-                            >
-                              {truncatedValue}
-                            </div>
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {/* Offline Nodes (if any) */}
         {offlineNodes.length > 0 && (
