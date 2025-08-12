@@ -1,4 +1,5 @@
 import { ReactNode } from "react"
+import { useLocation, Link } from "react-router-dom"
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,9 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const location = useLocation();
+  const pathnames = location.pathname.split("/").filter(Boolean);
+
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
@@ -22,25 +26,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800">
           <SidebarTrigger className="-ml-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white p-2 rounded-md transition-colors" />
-          <div className="flex items-center gap-2 ml-4">
-            <Activity className="w-5 h-5 text-green-600 animate-pulse" />
-            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-              Online
-            </Badge>
-          </div>
-          
-          <div className="ml-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative hover:bg-gray-100 dark:hover:bg-gray-800">
-              <Bell className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></span>
-            </Button>
-            <Button variant="ghost" size="icon" className="hover:bg-gray-100 dark:hover:bg-gray-800">
-              <Settings className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="hover:bg-gray-100 dark:hover:bg-gray-800">
-              <User className="w-4 h-4" />
-            </Button>
-          </div>
+          {/* Breadcrumbs */}
+          <nav aria-label="Breadcrumb" className="flex items-center text-sm text-gray-500 dark:text-gray-400 ml-2">
+            <Link to="/" className="hover:underline text-gray-700 dark:text-gray-200 font-medium">Home</Link>
+            {pathnames.map((segment, idx) => {
+              const to = "/" + pathnames.slice(0, idx + 1).join("/");
+              const isLast = idx === pathnames.length - 1;
+              // Convert to Title Case and replace dashes/underscores with spaces
+              const label = decodeURIComponent(segment)
+                .replace(/[-_]/g, ' ')
+                .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+              return (
+                <span key={to} className="flex items-center">
+                  <span className="mx-2">/</span>
+                  {isLast ? (
+                    <span className="font-semibold text-gray-900 dark:text-white">{label}</span>
+                  ) : (
+                    <Link to={to} className="hover:underline text-gray-700 dark:text-gray-200">{label}</Link>
+                  )}
+                </span>
+              );
+            })}
+          </nav>
         </header>
 
         {/* Main Content */}
