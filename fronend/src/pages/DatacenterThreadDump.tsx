@@ -151,8 +151,7 @@ const DatacenterThreadDump = () => {
             <div className="flex items-center gap-4">
               <Activity className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-3xl font-bold">Thread Dump</h1>
-                <p className="text-muted-foreground">{datacenter} Datacenter Thread Analysis</p>
+                {/* Removed duplicate page title and subtitle, breadcrumbs now provide navigation context */}
               </div>
             </div>
             <Button onClick={handleRefresh} variant="outline">
@@ -177,8 +176,7 @@ const DatacenterThreadDump = () => {
             <div className="flex items-center gap-4">
               <Activity className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-3xl font-bold">Thread Dump</h1>
-                <p className="text-muted-foreground">{datacenter} Datacenter Thread Analysis</p>
+                {/* Removed duplicate page title and subtitle, breadcrumbs now provide navigation context */}
               </div>
             </div>
             <Button onClick={handleRefresh} variant="outline">
@@ -204,180 +202,188 @@ const DatacenterThreadDump = () => {
     )
   }
 
+  // Find the selected node object for info display
+  const selectedNodeObj = nodes.find((n) => n.name === selectedNode)
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Activity className="w-8 h-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Thread Dump</h1>
-              <p className="text-muted-foreground">{datacenter} Datacenter Thread Analysis</p>
+        {/* Top section: title, node selector, badges, all grouped and visually separated */}
+        <div className="px-1 pt-2 pb-1">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Title and host */}
+            <div className="flex items-center gap-4 min-w-0">
+              <Activity className="w-8 h-8 text-primary shrink-0" />
+              <div>
+                <h1 className="text-3xl font-bold leading-tight tracking-tight truncate">{selectedNodeObj.name.charAt(0).toUpperCase() + selectedNodeObj.name.slice(1)} Thread Dump</h1>
+                <span className="text-sm text-muted-foreground truncate">
+                  {selectedNodeObj.host}:{selectedNodeObj.port}
+                  {threadData.threadCount && (
+                    <> | Threads: {threadData.threadCount.current} | Peak: {threadData.threadCount.peak} | Daemon: {threadData.threadCount.daemon}</>
+                  )}
+                </span>
+              </div>
+            </div>
+            {/* Node selector and refresh separated */}
+            <div className="flex flex-1 items-center justify-between md:justify-end gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-muted-foreground mr-1">Select Node:</span>
+                {nodes.length > 0 && (
+                  <Tabs value={selectedNode || undefined} onValueChange={setSelectedNode} className="">
+                    <TabsList className="flex bg-transparent shadow-none p-0 gap-1">
+                      {nodes.map((node) => (
+                        <TabsTrigger
+                          key={node.name}
+                          value={node.name}
+                          className={
+                            `h-9 px-4 text-sm font-mono rounded-md border border-border transition-colors ` +
+                            `data-[state=active]:bg-primary/90 data-[state=active]:text-white data-[state=active]:border-primary/80 ` +
+                            `data-[state=inactive]:bg-background data-[state=inactive]:text-primary data-[state=inactive]:border-primary/40 ` +
+                            `hover:bg-primary/10 hover:text-primary`
+                          }
+                        >
+                          {node.name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                )}
+              </div>
+              <Button onClick={handleRefresh} variant="outline" className="h-9 px-4 text-sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
             </div>
           </div>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          {/* Horizontal line for separation */}
+          <hr className="my-3 border-t border-border/60" />
         </div>
-        {nodes.length > 0 && (
-          <Tabs value={selectedNode || undefined} onValueChange={setSelectedNode} className="w-full">
-            <TabsList className="grid w-full mb-4" style={{ gridTemplateColumns: `repeat(${nodes.length}, 1fr)` }}>
-              {nodes.map((node) => (
-                <TabsTrigger key={node.name} value={node.name} className="flex items-center gap-2">
-                  <span className="font-mono text-xs">{node.name}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {nodes.map((node) => (
-              <TabsContent key={node.name} value={node.name} className="space-y-4">
-                {selectedNode === node.name && (
-                  <div>
-                    <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between bg-muted/50 rounded-lg px-4 py-3 gap-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Server className="w-6 h-6 text-primary shrink-0" />
-                        <h2 className="font-mono font-semibold text-lg truncate">{node.name.charAt(0).toUpperCase() + node.name.slice(1)}</h2>
-                        <span className="text-xs text-muted-foreground truncate">{node.host}:{node.port}</span>
-                        <span className="text-xs text-green-600 font-semibold ml-2">Online</span>
-                      </div>
-                      {threadData.threadCount && (
-                        <div className="flex gap-2 flex-wrap md:justify-end">
-                          <Badge variant="secondary" className="text-xs px-2 py-1">Threads: <span className="font-semibold ml-1">{threadData.threadCount.current}</span></Badge>
-                          <Badge variant="secondary" className="text-xs px-2 py-1">Peak: <span className="font-semibold ml-1">{threadData.threadCount.peak}</span></Badge>
-                          <Badge variant="secondary" className="text-xs px-2 py-1">Daemon: <span className="font-semibold ml-1">{threadData.threadCount.daemon}</span></Badge>
-                        </div>
-                      )}
-                    </div>
-                    <div className="overflow-x-auto border border-border rounded-lg">
-                      {threadData.loading ? (
-                        <div className="p-6 text-muted-foreground">Loading thread dump...</div>
-                      ) : threadData.error ? (
-                        <div className="p-6 text-red-600">{threadData.error}</div>
-                      ) : (
-                        <table className="w-full text-sm">
-                          <thead className="bg-muted/50">
-                            <tr className="border-b">
-                              <th className="text-left p-3 w-8"></th>
-                              <th className="text-left p-3">Name</th>
-                              <th
-                                className="text-left p-3 cursor-pointer select-none"
-                                onClick={() => {
-                                  setSortBy('cpu')
-                                  setSortDir(sortBy === 'cpu' && sortDir === 'desc' ? 'asc' : 'desc')
-                                }}
-                              >
-                                <span className="inline-flex items-center gap-1">
-                                  CPU Time
-                                  <span className={sortBy === 'cpu' ? 'text-primary' : 'text-muted-foreground'}>
-                                    ▲
-                                  </span>
-                                  <span className={sortBy === 'cpu' ? 'text-primary' : 'text-muted-foreground'}>
-                                    ▼
-                                  </span>
-                                </span>
-                              </th>
-                              <th
-                                className="text-left p-3 cursor-pointer select-none"
-                                onClick={() => {
-                                  setSortBy('user')
-                                  setSortDir(sortBy === 'user' && sortDir === 'desc' ? 'asc' : 'desc')
-                                }}
-                              >
-                                <span className="inline-flex items-center gap-1">
-                                  User Time
-                                  <span className={sortBy === 'user' ? 'text-primary' : 'text-muted-foreground'}>
-                                    ▲
-                                  </span>
-                                  <span className={sortBy === 'user' ? 'text-primary' : 'text-muted-foreground'}>
-                                    ▼
-                                  </span>
-                                </span>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[...threadData.threads]
-                              .sort((a, b) => {
-                                if (sortBy === 'cpu') {
-                                  const aVal = parseFloat(a.cpuTime.replace(/[^\d.]/g, '')) || 0
-                                  const bVal = parseFloat(b.cpuTime.replace(/[^\d.]/g, '')) || 0
-                                  return sortDir === 'desc' ? bVal - aVal : aVal - bVal
-                                }
-                                if (sortBy === 'user') {
-                                  const aVal = parseFloat(a.userTime.replace(/[^\d.]/g, '')) || 0
-                                  const bVal = parseFloat(b.userTime.replace(/[^\d.]/g, '')) || 0
-                                  return sortDir === 'desc' ? bVal - aVal : aVal - bVal
-                                }
-                                return 0
-                              })
-                              .map((thread) => {
-                                const isExpanded = expanded.has(thread.id)
-                                return (
-                                  <>
-                                    <tr key={thread.id} className="border-b hover:bg-muted/50">
-                                      <td className="p-3 align-top">
-                                        <button
-                                          className="focus:outline-none"
-                                          aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                                          onClick={() => {
-                                            setExpanded(prev => {
-                                              const set = new Set(prev)
-                                              if (set.has(thread.id)) set.delete(thread.id)
-                                              else set.add(thread.id)
-                                              return new Set(set)
-                                            })
-                                          }}
-                                        >
-                                          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                        </button>
-                                      </td>
-                                      <td className="p-3 align-top font-mono text-xs text-blue-700 dark:text-blue-300">{thread.name}</td>
-                                      <td className="p-3 align-top font-mono text-xs">{thread.cpuTime}</td>
-                                      <td className="p-3 align-top font-mono text-xs">{thread.userTime}</td>
-                                    </tr>
-                                    {isExpanded && (
-                                      <tr>
-                                        <td colSpan={4} className="bg-muted/30 p-4">
-                                          <div className="mb-2 text-xs">
-                                            <span className="font-semibold">State:</span> {thread.state}
-                                            {thread.lock && <><span className="font-semibold ml-2">Lock:</span> <span className="font-mono">{thread.lock}</span></>}
-                                            {thread["lock-waiting"] && (
-                                              <><span className="font-semibold ml-2">Waiting for:</span> <span className="font-mono">{thread["lock-waiting"].name} ({thread["lock-waiting"].owner || "unknown"})</span></>
-                                            )}
-                                          </div>
-                                          <div className="bg-muted rounded p-2 overflow-x-auto">
-                                            <pre className="text-xs leading-tight font-mono text-gray-800 dark:text-gray-200">
-                                              {thread.stackTrace.map((line, idx) => (
-                                                <div key={idx}>{line}</div>
-                                              ))}
-                                            </pre>
-                                          </div>
-                                          {thread["synchronizers-locked"] && thread["synchronizers-locked"].length > 0 && (
-                                            <div className="mt-2 text-xs text-muted-foreground">
-                                              <span className="font-semibold">Synchronizers locked:</span> {thread["synchronizers-locked"].join(", ")}
-                                            </div>
-                                          )}
-                                          {thread["monitors-locked"] && thread["monitors-locked"].length > 0 && (
-                                            <div className="mt-2 text-xs text-muted-foreground">
-                                              <span className="font-semibold">Monitors locked:</span> {thread["monitors-locked"].join(", ")}
-                                            </div>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    )}
-                                  </>
-                                )
-                              })}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
-        )}
+
+        {/* Thread dump table for selected node */}
+        <div className="overflow-x-auto border border-border rounded-lg">
+          {threadData.loading ? (
+            <div className="p-6 text-muted-foreground">Loading thread dump...</div>
+          ) : threadData.error ? (
+            <div className="p-6 text-red-600">{threadData.error}</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr className="border-b">
+                  <th className="text-left p-3 w-8"></th>
+                  <th className="text-left p-3">Name</th>
+                  <th
+                    className="text-left p-3 cursor-pointer select-none"
+                    onClick={() => {
+                      setSortBy('cpu')
+                      setSortDir(sortBy === 'cpu' && sortDir === 'desc' ? 'asc' : 'desc')
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      CPU Time
+                      <span className={sortBy === 'cpu' ? 'text-primary' : 'text-muted-foreground'}>
+                        ▲
+                      </span>
+                      <span className={sortBy === 'cpu' ? 'text-primary' : 'text-muted-foreground'}>
+                        ▼
+                      </span>
+                    </span>
+                  </th>
+                  <th
+                    className="text-left p-3 cursor-pointer select-none"
+                    onClick={() => {
+                      setSortBy('user')
+                      setSortDir(sortBy === 'user' && sortDir === 'desc' ? 'asc' : 'desc')
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      User Time
+                      <span className={sortBy === 'user' ? 'text-primary' : 'text-muted-foreground'}>
+                        ▲
+                      </span>
+                      <span className={sortBy === 'user' ? 'text-primary' : 'text-muted-foreground'}>
+                        ▼
+                      </span>
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...threadData.threads]
+                  .sort((a, b) => {
+                    if (sortBy === 'cpu') {
+                      const aVal = parseFloat(a.cpuTime.replace(/[^\d.]/g, '')) || 0
+                      const bVal = parseFloat(b.cpuTime.replace(/[^\d.]/g, '')) || 0
+                      return sortDir === 'desc' ? bVal - aVal : aVal - bVal
+                    }
+                    if (sortBy === 'user') {
+                      const aVal = parseFloat(a.userTime.replace(/[^\d.]/g, '')) || 0
+                      const bVal = parseFloat(b.userTime.replace(/[^\d.]/g, '')) || 0
+                      return sortDir === 'desc' ? bVal - aVal : aVal - bVal
+                    }
+                    return 0
+                  })
+                  .map((thread) => {
+                    const isExpanded = expanded.has(thread.id)
+                    return (
+                      <>
+                        <tr key={thread.id} className="border-b hover:bg-muted/50">
+                          <td className="p-3 align-top">
+                            <button
+                              className="focus:outline-none"
+                              aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                              onClick={() => {
+                                setExpanded(prev => {
+                                  const set = new Set(prev)
+                                  if (set.has(thread.id)) set.delete(thread.id)
+                                  else set.add(thread.id)
+                                  return new Set(set)
+                                })
+                              }}
+                            >
+                              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </button>
+                          </td>
+                          <td className="p-3 align-top font-mono text-xs text-blue-700 dark:text-blue-300">{thread.name}</td>
+                          <td className="p-3 align-top font-mono text-xs">{thread.cpuTime}</td>
+                          <td className="p-3 align-top font-mono text-xs">{thread.userTime}</td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={4} className="bg-muted/30 p-4">
+                              <div className="mb-2 text-xs">
+                                <span className="font-semibold">State:</span> {thread.state}
+                                {thread.lock && <><span className="font-semibold ml-2">Lock:</span> <span className="font-mono">{thread.lock}</span></>}
+                                {thread["lock-waiting"] && (
+                                  <><span className="font-semibold ml-2">Waiting for:</span> <span className="font-mono">{thread["lock-waiting"].name} ({thread["lock-waiting"].owner || "unknown"})</span></>
+                                )}
+                              </div>
+                              <div className="bg-muted rounded p-2 overflow-x-auto">
+                                <pre className="text-xs leading-tight font-mono text-gray-800 dark:text-gray-200">
+                                  {thread.stackTrace.map((line, idx) => (
+                                    <div key={idx}>{line}</div>
+                                  ))}
+                                </pre>
+                              </div>
+                              {thread["synchronizers-locked"] && thread["synchronizers-locked"].length > 0 && (
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                  <span className="font-semibold">Synchronizers locked:</span> {thread["synchronizers-locked"].join(", ")}
+                                </div>
+                              )}
+                              {thread["monitors-locked"] && thread["monitors-locked"].length > 0 && (
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                  <span className="font-semibold">Monitors locked:</span> {thread["monitors-locked"].join(", ")}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    )
+                  })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   )
