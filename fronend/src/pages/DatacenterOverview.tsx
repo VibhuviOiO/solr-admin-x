@@ -105,7 +105,7 @@ interface DatacenterInfo {
   zookeeperNodes: ZookeeperNode[]
 }
 
-const DatacenterDashboard = () => {
+const DatacenterOverview = () => {
   const { datacenter } = useParams<{ datacenter: string }>()
   const [datacenterInfo, setDatacenterInfo] = useState<DatacenterInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -728,4 +728,4 @@ const DatacenterDashboard = () => {
   );
 };
 
-export default DatacenterDashboard
+export default DatacenterOverview
