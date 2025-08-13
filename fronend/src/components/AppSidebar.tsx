@@ -10,10 +10,11 @@ import {
   FileText,
   Activity,
   Zap,
-  HardDrive,
   Network,
   Home
-} from "lucide-react"
+} from "lucide-react";
+
+import { datacenterMenuItems, collectionMenuItems, coreMenuItems } from "@/constants/solrMenus";
 import {
   Sidebar,
   SidebarContent,
@@ -23,9 +24,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarHeader,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useState, useEffect } from "react"
+
 
 interface DatacenterConfig {
   name: string
@@ -47,6 +49,14 @@ export function AppSidebar() {
   const currentDatacenter = searchParams.get('datacenter') || 'all'
   const [datacenters, setDatacenters] = useState<DatacenterConfig[]>([])
   const [openDatacenters, setOpenDatacenters] = useState<Record<string, boolean>>({})
+  // Per-DC state for Solr mode, collections, cores, and selection
+  const [dcState, setDcState] = useState<Record<string, {
+    isCloudEnabled: boolean,
+    collections: Array<{ name: string, type: string }>,
+    cores: Array<{ name: string }>,
+    currentCollection?: { name: string, type: string },
+    currentCore?: { name: string },
+  }>>({})
 
   // Get active datacenter from current route
   const getActiveDatacenter = () => {
@@ -59,7 +69,7 @@ export function AppSidebar() {
 
   const activeDatacenter = getActiveDatacenter()
 
-  // Fetch datacenter configuration from backend
+  // Fetch datacenter configuration and per-DC state from backend
   useEffect(() => {
     const fetchDatacenters = async () => {
       try {
@@ -68,13 +78,31 @@ export function AppSidebar() {
         if (response.ok) {
           const data = await response.json()
           setDatacenters(data.datacenters || data)
-          
           // Initialize only the default datacenter as open
           const initialOpenState = (data.datacenters || data).reduce((acc: Record<string, boolean>, dc: DatacenterConfig) => {
             acc[dc.name] = dc.default || false
             return acc
           }, {})
           setOpenDatacenters(initialOpenState)
+          // Simulate per-DC state (replace with real API calls per DC)
+          const state: Record<string, any> = {}
+          for (const dc of data.datacenters || data) {
+            // TODO: Replace with real API calls for each DC
+            state[dc.name] = {
+              isCloudEnabled: true, // Simulate all as cloud for now
+              collections: [
+                { name: 'collection1', type: 'collection' },
+                { name: 'alias1', type: 'alias' }
+              ],
+              cores: [
+                { name: 'core1' },
+                { name: 'core2' }
+              ],
+              currentCollection: undefined,
+              currentCore: undefined
+            }
+          }
+          setDcState(state)
         } else {
           throw new Error('API not available')
         }
@@ -109,14 +137,38 @@ export function AppSidebar() {
           }
         ]
         setDatacenters(fallbackDatacenters)
-        // Initialize only the default datacenter as open
         setOpenDatacenters({
-          'London': true,   // Default datacenter open
-          'Virginia': false // Others closed
+          'London': true,
+          'Virginia': false
+        })
+        // Simulate per-DC state for fallback
+        setDcState({
+          'London': {
+            isCloudEnabled: true,
+            collections: [
+              { name: 'collection1', type: 'collection' },
+              { name: 'alias1', type: 'alias' }
+            ],
+            cores: [
+              { name: 'core1' },
+              { name: 'core2' }
+            ],
+            currentCollection: undefined,
+            currentCore: undefined
+          },
+          'Virginia': {
+            isCloudEnabled: false,
+            collections: [],
+            cores: [
+              { name: 'core1' },
+              { name: 'core2' }
+            ],
+            currentCollection: undefined,
+            currentCore: undefined
+          }
         })
       }
     }
-
     fetchDatacenters()
   }, [])
 
@@ -129,52 +181,6 @@ export function AppSidebar() {
       }))
     }
   }, [activeDatacenter])
-
-  // Menu items for each datacenter
-  const datacenterMenuItems = [
-    {
-      title: "Overview",
-      icon: BarChart3,
-      path: "/dashboard"
-    },
-    {
-      title: "ZK Status",
-      icon: Zap,
-      path: "/zk-status"
-    },
-    {
-      title: "Nodes",
-      icon: Server,
-      path: "/nodes"
-    },
-    {
-      title: "Security",
-      icon: Shield,
-      path: "/security"
-    },
-    {
-      title: "Logging",
-      icon: FileText,
-      path: "/logging",
-      children: [
-        {
-          title: "Level",
-          icon: FileText,
-          path: "/logging-level"
-        }
-      ]
-    },
-    {
-      title: "Java Properties",
-      icon: Settings,
-      path: "/java-properties"
-    },
-    {
-      title: "Thread Dump",
-      icon: Activity,
-      path: "/thread-dump"
-    }
-  ]
 
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-gray-200 dark:border-gray-800">
@@ -226,13 +232,13 @@ export function AppSidebar() {
               {datacenters.map((datacenter) => {
                 const isActiveDatacenter = activeDatacenter === datacenter.name
                 const isOpen = openDatacenters[datacenter.name] || false
-
+                const dc = dcState[datacenter.name]
+                // Only render selectors/menus if dc state is loaded
                 return (
                   <SidebarMenuItem key={datacenter.name}>
                     <Collapsible
                       open={isOpen}
                       onOpenChange={(open) => {
-                        // Simple toggle behavior - user controls when menus open/close
                         setOpenDatacenters(prev => ({
                           ...prev,
                           [datacenter.name]: open
@@ -261,7 +267,8 @@ export function AppSidebar() {
                         </button>
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-1 space-y-1">
-                        {datacenterMenuItems.map((item) => {
+                        {/* Shared menu per DC */}
+                        {dc && datacenterMenuItems.map((item) => {
                           const linkPath = `/datacenter/${datacenter.name}${item.path}`
                           if (!item.children) {
                             return (
@@ -281,7 +288,6 @@ export function AppSidebar() {
                               </div>
                             )
                           } else {
-                            // Render parent and children (submenu)
                             return (
                               <div key={item.path} className="pl-8">
                                 <NavLink
@@ -296,7 +302,6 @@ export function AppSidebar() {
                                   <item.icon className="w-4 h-4" />
                                   {item.title}
                                 </NavLink>
-                                {/* Submenu */}
                                 <div className="pl-6 mt-1 space-y-1">
                                   {item.children.map((child) => {
                                     const childPath = `/datacenter/${datacenter.name}${child.path}`
@@ -321,6 +326,104 @@ export function AppSidebar() {
                             )
                           }
                         })}
+                        {/* Collection selector and menu (Cloud mode only) */}
+                        {dc && dc.isCloudEnabled && (
+                          <div className="pl-8 mt-4">
+                            <div>
+                              <select
+                                className="w-full border rounded p-1 text-xs"
+                                value={dc.currentCollection?.name || ''}
+                                onChange={e => {
+                                  const selected = dc.collections.find(c => c.name === e.target.value)
+                                  setDcState(prev => ({
+                                    ...prev,
+                                    [datacenter.name]: {
+                                      ...prev[datacenter.name],
+                                      currentCollection: selected
+                                    }
+                                  }))
+                                }}
+                              >
+                                <option value="">Select Collection</option>
+                                {dc.collections.map(coll => (
+                                  <option key={coll.name} value={coll.name}>{coll.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            {dc.currentCollection && (
+                              <div className="sub-menu mt-2">
+                                {collectionMenuItems.map(menu => {
+                                  // Show/hide based on collection type, as in Angular
+                                  if (menu.title === 'Analysis' && dc.currentCollection.type === 'alias') return null
+                                  if (menu.title === 'Documents' && dc.currentCollection.type === 'alias') return null
+                                  if (menu.title === 'Paramsets' && dc.currentCollection.type === 'alias') return null
+                                  if (menu.title === 'Files' && dc.currentCollection.type === 'alias') return null
+                                  if (menu.title === 'Schema' && dc.currentCollection.type === 'alias') return null
+                                  return (
+                                    <NavLink
+                                      key={menu.path}
+                                      to={`/datacenter/${datacenter.name}/collection/${dc.currentCollection.name}${menu.path}`}
+                                      className={({ isActive }) =>
+                                        `flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${isActive
+                                          ? 'bg-blue-50 text-blue-900 dark:bg-blue-900/10 dark:text-blue-200'
+                                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                        }`
+                                      }
+                                    >
+                                      <menu.icon className="w-3 h-3" />
+                                      {menu.title}
+                                    </NavLink>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* Core selector and menu (non-cloud mode or always for demo) */}
+                        {dc && dc.cores && dc.cores.length > 0 && (
+                          <div className="pl-8 mt-4">
+                            <div>
+                              <select
+                                className="w-full border rounded p-1 text-xs"
+                                value={dc.currentCore?.name || ''}
+                                onChange={e => {
+                                  const selected = dc.cores.find(c => c.name === e.target.value)
+                                  setDcState(prev => ({
+                                    ...prev,
+                                    [datacenter.name]: {
+                                      ...prev[datacenter.name],
+                                      currentCore: selected
+                                    }
+                                  }))
+                                }}
+                              >
+                                <option value="">Select Core</option>
+                                {dc.cores.map(core => (
+                                  <option key={core.name} value={core.name}>{core.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            {dc.currentCore && (
+                              <div className="sub-menu mt-2">
+                                {coreMenuItems.map(menu => (
+                                  <NavLink
+                                    key={menu.path}
+                                    to={`/datacenter/${datacenter.name}/core/${dc.currentCore.name}${menu.path}`}
+                                    className={({ isActive }) =>
+                                      `flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${isActive
+                                        ? 'bg-blue-50 text-blue-900 dark:bg-blue-900/10 dark:text-blue-200'
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                      }`
+                                    }
+                                  >
+                                    <menu.icon className="w-3 h-3" />
+                                    {menu.title}
+                                  </NavLink>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </CollapsibleContent>
                     </Collapsible>
                   </SidebarMenuItem>

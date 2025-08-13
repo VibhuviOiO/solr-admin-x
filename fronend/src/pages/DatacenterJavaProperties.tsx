@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Coffee, RefreshCw, AlertTriangle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 
 interface SolrNode {
@@ -212,20 +213,26 @@ const DatacenterJavaProperties = () => {
           <table className="w-full text-sm border-0 rounded-none">
             <thead className="bg-muted/50 border-0 rounded-none">
               <tr className="border-b-0">
-                <th className="text-left p-3 font-semibold bg-muted/50">JVM Property</th>
+                <th className="text-left p-3 font-semibold bg-muted/50 uppercase tracking-wide">JVM Property</th>
                 {onlineNodes.map(node => (
                   <th key={node.name} className="text-left p-3 font-semibold bg-muted/50 min-w-[200px]">
-                    {node.name}
-                    <div className="text-xs font-normal text-muted-foreground mt-1">
-                      ({nodeProperties[node.name] ? Object.keys(nodeProperties[node.name].properties).length : 0} properties)
-                    </div>
+                    <span className="capitalize">{node.name.replace(/[-_]/g, ' ')}</span>
+                    <span className="ml-2 align-middle">
+                      <Badge
+                        variant="outline"
+                        className="px-2 py-0.5 text-[11px] font-mono rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 align-middle"
+                        title="Property count"
+                      >
+                        {nodeProperties[node.name] ? Object.keys(nodeProperties[node.name].properties).length : 0} Properties
+                      </Badge>
+                    </span>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {sortedPropertyKeys.map((propertyKey, index) => (
-                <tr key={propertyKey} className={`hover:bg-muted/30 ${index % 2 === 0 ? 'bg-muted/10' : ''}`}>
+                <tr key={propertyKey} className={`transition-colors duration-150 hover:bg-muted/50 ${index % 2 === 0 ? 'bg-muted/10' : ''}`}>
                   <td className="p-3 font-mono text-xs font-medium text-blue-700 dark:text-blue-300">
                     <div title={propertyKey} className="truncate max-w-[300px]">
                       {propertyKey}
@@ -240,7 +247,7 @@ const DatacenterJavaProperties = () => {
                       <td key={node.name} className="p-3 font-mono text-xs">
                         <div 
                           title={value} 
-                          className="truncate max-w-[200px] cursor-help"
+                          className="truncate max-w-[200px] cursor-default"
                         >
                           {truncatedValue}
                         </div>
