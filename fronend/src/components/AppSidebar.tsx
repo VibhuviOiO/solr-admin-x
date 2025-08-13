@@ -268,6 +268,7 @@ export function AppSidebar() {
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-1 space-y-1">
                         {/* Shared menu per DC */}
+                        {/* Default Menus */}
                         {dc && datacenterMenuItems.map((item) => {
                           const linkPath = `/datacenter/${datacenter.name}${item.path}`
                           if (!item.children) {
@@ -326,6 +327,8 @@ export function AppSidebar() {
                             )
                           }
                         })}
+                        {/* Separator: Collections */}
+                        <div style={{ marginTop: '1.25rem', marginBottom: '1.25rem' }} />
                         {/* Collection selector and menu (Cloud mode only) */}
                         {dc && dc.isCloudEnabled && (
                           <div className="pl-8 mt-4">
@@ -379,6 +382,8 @@ export function AppSidebar() {
                             )}
                           </div>
                         )}
+                        {/* Separator: Cores */}
+                        <div style={{ marginTop: '1.25rem', marginBottom: '1.25rem' }} />
                         {/* Core selector and menu (non-cloud mode or always for demo) */}
                         {dc && dc.cores && dc.cores.length > 0 && (
                           <div className="pl-8 mt-4">

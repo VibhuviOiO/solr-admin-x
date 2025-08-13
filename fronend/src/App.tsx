@@ -10,12 +10,14 @@ import NodeDetail from "./pages/NodeDetail";
 import DatacenterDetail from "./pages/DatacenterDetail";
 import NotFound from "./pages/NotFound";
 import ZKStatus from "./pages/ZKStatus";
-import DatacenterDashboard from "./pages/DatacenterDashboard";
+import DatacenterDashboard from "./pages/DatacenterOverview";
 import DatacenterNodes from "./pages/DatacenterNodes";
 import DatacenterSecurity from "./pages/DatacenterSecurity";
 import DatacenterLogging from "./pages/DatacenterLogging";
 import LoggingLevel from "./pages/LoggingLevel";
 import DatacenterJavaProperties from "./pages/DatacenterJavaProperties";
+
+import DatacenterOverview from "./pages/DatacenterOverview";
 import DatacenterThreadDump from "./pages/DatacenterThreadDump";
 
 const queryClient = new QueryClient();
@@ -39,6 +41,7 @@ const App = () => (
           <Route path="/datacenter/:datacenter/logging-level" element={<LoggingLevel />} />
           <Route path="/datacenter/:datacenter/java-properties" element={<DatacenterJavaProperties />} />
           <Route path="/datacenter/:datacenter/thread-dump" element={<DatacenterThreadDump />} />
+          <Route path="/datacenter/:datacenter/overview" element={<DatacenterDashboard />} />
           <Route path="/node/:nodeId" element={<NodeDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

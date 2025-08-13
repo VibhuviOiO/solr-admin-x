@@ -65,12 +65,12 @@ export const datacenterMenuItems: SolrMenuItem[] = [
       {
         title: "Nodes",
         icon: Server,
-        path: "/cloud-nodes"
+        path: "/nodes"
       },
       {
         title: "Tree",
         icon: TreeDeciduous,
-        path: "/cloud-tree"
+        path: "/tree"
       },
       {
         title: "ZK Status",
