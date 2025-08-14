@@ -1,4 +1,4 @@
-# Solr Admin X
+# UniSolr
 
 A modern web application for managing Apache Solr clusters with real-time monitoring and administration capabilities.
 
@@ -9,7 +9,7 @@ A modern web application for managing Apache Solr clusters with real-time monito
 
 ## 🌟 **Open Source Project**
 
-Solr Admin X is an **open source project** welcoming contributions from the community! Whether you're a seasoned developer or just starting out, there are many ways to contribute.
+UniSolr is an **open source project** welcoming contributions from the community! Whether you're a seasoned developer or just starting out, there are many ways to contribute.
 
 ### 🤝 **How to Contribute**
 - 🐛 **Report bugs** and request features
@@ -122,7 +122,7 @@ unisolr/
 
 ## ⚙️ Configuration
 
-Solr Admin X requires a datacenter configuration file to define your Solr clusters. The application uses the `DC_CONFIG_PATH` environment variable to locate this file.
+UniSolr requires a datacenter configuration file to define your Solr clusters. The application uses the `DC_CONFIG_PATH` environment variable to locate this file.
 
 ### 📋 Required Configuration
 
@@ -327,7 +327,7 @@ ZK_HOST=localhost:2181
 ### Frontend (.env)
 ```bash
 VITE_API_URL=http://localhost:3000
-VITE_APP_TITLE=Solr Admin X
+VITE_APP_TITLE=UniSolr
 VITE_APP_VERSION=1.0.0
 ```
 

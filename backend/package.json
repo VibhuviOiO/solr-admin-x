@@ -1,7 +1,7 @@
 {
   "name": "unisolr-backend",
   "version": "1.0.0",
-  "description": "Backend API for Solr Admin X",
+  "description": "Backend API for UniSolr",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",

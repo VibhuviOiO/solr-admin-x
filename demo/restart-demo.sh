@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Restart Demo Script for Solr Admin X
+# Restart Demo Script for UniSolr
 # This script restarts the entire demo environment
 
-echo "🔄 Restarting Solr Admin X Demo Environment"
+echo "🔄 Restarting UniSolr Demo Environment"
 echo "=========================================="
 
 ./stop-demo.sh

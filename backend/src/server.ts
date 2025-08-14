@@ -19,7 +19,7 @@ import infoThreadsRouter from './routes/infoThreads';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -50,7 +50,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Solr Admin X Backend is running' });
+  res.json({ status: 'OK', message: 'UniSolr Backend is running' });
 });
 
 app.listen(PORT, () => {

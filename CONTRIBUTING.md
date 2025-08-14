@@ -1,6 +1,6 @@
-# Contributing to Solr Admin X
+# Contributing to UniSolr
 
-Thank you for your interest in contributing to Solr Admin X! We welcome contributions from the community.
+Thank you for your interest in contributing to UniSolr! We welcome contributions from the community.
 
 ## 🚀 Quick Start for Contributors
 
@@ -25,8 +25,8 @@ Thank you for your interest in contributing to Solr Admin X! We welcome contribu
    npm run dev
    
    # Access the application
-   # Frontend: http://localhost:5173
-   # Backend: http://localhost:3000
+   # Frontend: http://localhost:3000
+   # Backend: http://localhost:3001
    ```
 
 3. **Or setup locally**
@@ -241,7 +241,7 @@ By contributing, you agree that your contributions will be licensed under the sa
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
 - **Backend**: Node.js, Express, TypeScript
 - **Infrastructure**: Docker, GitHub Actions, Google Cloud
-- **Monitoring**: Solr Admin API, ZooKeeper integration
+- **Monitoring**: UniSolr API, ZooKeeper integration
 
 ---
 

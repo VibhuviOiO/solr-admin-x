@@ -192,7 +192,7 @@ export function AppSidebar() {
             <Database className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Solr Admin</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">UniSolr</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400">Cluster Management</p>
           </div>
         </div>

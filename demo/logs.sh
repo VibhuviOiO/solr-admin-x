@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Logs Script for Solr Admin X Demo
+# Logs Script for UniSolr Demo
 # Shows logs from all services
 
-echo "📋 Solr Admin X Demo Logs"
+echo "📋 UniSolr Demo Logs"
 echo "========================"
 echo ""
 
@@ -18,7 +18,7 @@ show_logs() {
 }
 
 # Show logs for all services
-show_logs "Solr Admin X Application" "docker-compose-app.yml"
+show_logs "UniSolr Application" "docker-compose-app.yml"
 show_logs "Datacenter 1 (London)" "docker-compose-dc1.yml"
 show_logs "Datacenter 2 (Virginia)" "docker-compose-dc2.yml"
 

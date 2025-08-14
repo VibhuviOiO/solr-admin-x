@@ -1,12 +1,12 @@
-# 🧪 Solr Admin X Demo Environment
+# 🧪 UniSolr Demo Environment
 
-This folder contains a complete multi-datacenter SolrCloud demo setup for testing Solr Admin X.
+This folder contains a complete multi-datacenter SolrCloud demo setup for testing UniSolr.
 
 ## 🎯 What's Included
 
 - **2 Complete SolrCloud Datacenters**: Singapore & Tokyo
 - **10 Services Total**: 4 Solr nodes + 6 ZooKeeper nodes
-- **Solr Admin X Application**: Pre-configured Docker container
+- **UniSolr Application**: Pre-configured Docker container
 - **Automated Setup**: One-command deployment
 
 ## 🚀 Quick Start
@@ -19,7 +19,7 @@ chmod +x *.sh
 ```
 
 ### 2. Access the Application
-- **Solr Admin X**: http://localhost:3001
+- **UniSolr**: http://localhost:3001
 - **Solr DC1**: http://localhost:8983, http://localhost:8982
 - **Solr DC2**: http://localhost:8883, http://localhost:8882
 
@@ -45,7 +45,7 @@ chmod +x *.sh
            └─────────┬─────────────────┘
                      │
               ┌─────────────┐
-              │ Solr Admin X│
+              │ UniSolr│
               │   :3001     │
               └─────────────┘
 ```
@@ -56,7 +56,7 @@ chmod +x *.sh
 |------|-------------|
 | `docker-compose-dc1.yml` | Singapore datacenter (Solr + ZK cluster) |
 | `docker-compose-dc2.yml` | Tokyo datacenter (Solr + ZK cluster) |
-| `docker-compose-app.yml` | Solr Admin X application |
+| `docker-compose-app.yml` | UniSolr application |
 | `demo-config/` | Configuration files for demo |
 | `start-demo.sh` | 🚀 Start entire demo environment |
 | `stop-demo.sh` | 🛑 Stop all services |
@@ -88,7 +88,7 @@ docker compose -f docker-compose-dc2.yml ps
 
 ## 🌐 Access Points
 
-### Solr Admin X Application
+### UniSolr Application
 - **Main Interface**: http://localhost:3001
 
 ### Datacenter 1 (Singapore)
@@ -217,4 +217,4 @@ docker run -p 3001:3001 \
 
 **🎉 Happy Testing!** 
 
-This demo environment provides a complete multi-datacenter SolrCloud setup for thoroughly testing Solr Admin X functionality.
+This demo environment provides a complete multi-datacenter SolrCloud setup for thoroughly testing UniSolr functionality.
