@@ -2,8 +2,8 @@
 
 A modern web application for managing Apache Solr clusters with real-time monitoring and administration capabilities.
 
-[![Build Status](https://github.com/YOUR_ORG/solr-admin-x/workflows/Build%20and%20Push%20Docker%20Image/badge.svg)](https://github.com/YOUR_ORG/solr-admin-x/actions)
-[![Docker Image](https://img.shields.io/badge/docker-gcr.io-blue)](https://gcr.io/YOUR_PROJECT_ID/solr-admin-x)
+[![Build Status](https://github.com/YOUR_ORG/unisolr/workflows/Build%20and%20Push%20Docker%20Image/badge.svg)](https://github.com/YOUR_ORG/unisolr/actions)
+[![Docker Image](https://img.shields.io/badge/docker-gcr.io-blue)](https://gcr.io/YOUR_PROJECT_ID/unisolr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
 
@@ -38,11 +38,11 @@ Solr Admin X is an **open source project** welcoming contributions from the comm
 
 ```bash
 # Pull and run the latest version
-docker pull ghcr.io/vibhuvioio/solr-admin-x:latest
-docker run -p 3000:3000 ghcr.io/vibhuvioio/solr-admin-x:latest
+docker pull ghcr.io/vibhuvioio/unisolr:latest
+docker run -p 3000:3000 ghcr.io/vibhuvioio/unisolr:latest
 
 # Or run directly
-docker run -p 3000:3000 ghcr.io/vibhuvioio/solr-admin-x:latest
+docker run -p 3000:3000 ghcr.io/vibhuvioio/unisolr:latest
 ```
 
 The application will be available at: http://localhost:3000
@@ -52,7 +52,7 @@ The application will be available at: http://localhost:3000
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd solr-admin-x
+cd unisolr
 
 # Start development environment
 npm run dev
@@ -95,7 +95,7 @@ npm run frontend:dev
 ## 📁 Project Structure
 
 ```
-solr-admin-x/
+unisolr/
 ├── backend/                 # Node.js + Express backend
 │   ├── src/
 │   │   ├── server.ts       # Main server file
@@ -184,8 +184,8 @@ Create a JSON file with this structure:
 #### With Docker Compose:
 ```yaml
 services:
-  solr-admin-x:
-    image: ghcr.io/vibhuvioio/solr-admin-x:latest
+  unisolr:
+    image: ghcr.io/vibhuvioio/unisolr:latest
     ports:
       - "3000:3000"
     environment:
@@ -200,7 +200,7 @@ docker run -d \
   -p 3000:3000 \
   -v /path/to/your/config:/app/config:ro \
   -e DC_CONFIG_PATH=/app/config/solr-datacenters.json \
-  ghcr.io/vibhuvioio/solr-admin-x:latest
+  ghcr.io/vibhuvioio/unisolr:latest
 ```
 
 ### 🧪 Demo Configuration
@@ -337,10 +337,10 @@ VITE_APP_VERSION=1.0.0
 
 ```bash
 # Build production image
-docker build -t solr-admin-x .
+docker build -t unisolr .
 
 # Build development image
-docker build -f Dockerfile.dev -t solr-admin-x:dev .
+docker build -f Dockerfile.dev -t unisolr:dev .
 ```
 
 ### Running Containers
@@ -390,16 +390,16 @@ docker-compose -f docker-compose.prod.yml ps
 
 1. **Build the image**:
    ```bash
-   docker build -t solr-admin-x:latest .
+   docker build -t unisolr:latest .
    ```
 
 2. **Run in production**:
    ```bash
    docker run -d \
-     --name solr-admin-x \
+     --name unisolr \
      -p 3000:3000 \
      -e NODE_ENV=production \
-     solr-admin-x:latest
+     unisolr:latest
    ```
 
 ### Docker Hub Deployment
@@ -407,10 +407,10 @@ docker-compose -f docker-compose.prod.yml ps
 ```bash
 # Images are automatically published to GitHub Container Registry
 # Available tags:
-docker pull ghcr.io/vibhuvioio/solr-admin-x:latest        # Latest main branch
-docker pull ghcr.io/vibhuvioio/solr-admin-x:main          # Main branch
-docker pull ghcr.io/vibhuvioio/solr-admin-x:develop       # Develop branch  
-docker pull ghcr.io/vibhuvioio/solr-admin-x:v1.0.0        # Specific version
+docker pull ghcr.io/vibhuvioio/unisolr:latest        # Latest main branch
+docker pull ghcr.io/vibhuvioio/unisolr:main          # Main branch
+docker pull ghcr.io/vibhuvioio/unisolr:develop       # Develop branch  
+docker pull ghcr.io/vibhuvioio/unisolr:v1.0.0        # Specific version
 
 # All images are publicly available - no authentication required
 ```
@@ -421,11 +421,11 @@ docker pull ghcr.io/vibhuvioio/solr-admin-x:v1.0.0        # Specific version
 
 ```bash
 # Backend dependencies
-docker-compose -f docker-compose.dev.yml exec solr-admin-x-dev sh
+docker-compose -f docker-compose.dev.yml exec unisolr-dev sh
 cd backend && npm install <package-name>
 
 # Frontend dependencies
-docker-compose -f docker-compose.dev.yml exec solr-admin-x-dev sh
+docker-compose -f docker-compose.dev.yml exec unisolr-dev sh
 cd fronend && npm install <package-name>
 ```
 
@@ -466,10 +466,10 @@ The application is ready for database integration. Environment variables are con
 docker-compose logs -f
 
 # Access container shell
-docker-compose exec solr-admin-x-dev sh
+docker-compose exec unisolr-dev sh
 
 # Check Docker images
-docker images | grep solr-admin-x
+docker images | grep unisolr
 
 # Check running containers
 docker ps
@@ -499,8 +499,8 @@ For security-related issues, please read our [Security Policy](SECURITY.md) and 
 
 ## 📞 Support & Community
 
-- 📋 **Issues**: [GitHub Issues](https://github.com/YOUR_ORG/solr-admin-x/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/YOUR_ORG/solr-admin-x/discussions)
+- 📋 **Issues**: [GitHub Issues](https://github.com/YOUR_ORG/unisolr/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/YOUR_ORG/unisolr/discussions)
 - 📧 **Email**: [your-email@domain.com]
 
 ---

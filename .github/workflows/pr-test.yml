@@ -58,11 +58,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t solr-admin-x:test .
+        run: docker build -t unisolr:test .
 
       - name: Test Docker image
         run: |
-          docker run -d --name test-container -p 3000:3000 solr-admin-x:test
+          docker run -d --name test-container -p 3000:3000 unisolr:test
           sleep 10
           curl -f http://localhost:3000/health || exit 1
           docker stop test-container

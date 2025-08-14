@@ -15,8 +15,8 @@ Thank you for your interest in contributing to Solr Admin X! We welcome contribu
 1. **Fork the repository**
    ```bash
    # Click "Fork" on GitHub, then clone your fork
-   git clone https://github.com/YOUR_USERNAME/solr-admin-x.git
-   cd solr-admin-x
+   git clone https://github.com/YOUR_USERNAME/unisolr.git
+   cd unisolr
    ```
 
 2. **Start with Docker (Recommended)**
@@ -85,7 +85,7 @@ npm run test
 npm run build
 
 # Test with Docker
-docker build -t solr-admin-x:test .
+docker build -t unisolr:test .
 ```
 
 #### Step 5: Submit a Pull Request
@@ -162,7 +162,7 @@ docs(readme): update docker setup instructions
 ## 🏗️ Project Structure
 
 ```
-solr-admin-x/
+unisolr/
 ├── 📁 backend/           # Node.js + Express API
 │   ├── src/
 │   │   ├── server.ts     # Main server

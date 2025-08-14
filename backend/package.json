@@ -1,5 +1,5 @@
 {
-  "name": "solr-admin-x-backend",
+  "name": "unisolr-backend",
   "version": "1.0.0",
   "description": "Backend API for Solr Admin X",
   "main": "dist/server.js",

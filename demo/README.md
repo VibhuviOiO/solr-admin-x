@@ -203,7 +203,7 @@ DC_CONFIG_PATH=../demo/demo-config/dc-data.localhost.json npm run start
 docker run -p 3001:3001 \
   -v $(pwd)/demo-config:/app/config:ro \
   -e DC_CONFIG_PATH=/app/config/dc-data.demo.json \
-  ghcr.io/vibhuvioio/solr-admin-x:latest
+  ghcr.io/vibhuvioio/unisolr:latest
 ```
 
 ## 🚨 Important Notes

@@ -34,20 +34,20 @@ The workflows use the built-in `GITHUB_TOKEN` which is automatically provided by
 After successful builds, your images will be available at:
 
 ```
-ghcr.io/vibhuvioio/solr-admin-x:latest
-ghcr.io/vibhuvioio/solr-admin-x:main
-ghcr.io/vibhuvioio/solr-admin-x:develop
-ghcr.io/vibhuvioio/solr-admin-x:v1.0.0
+ghcr.io/vibhuvioio/unisolr:latest
+ghcr.io/vibhuvioio/unisolr:main
+ghcr.io/vibhuvioio/unisolr:develop
+ghcr.io/vibhuvioio/unisolr:v1.0.0
 ```
 
 ### Pull Images (Public Access)
 
 ```bash
 # Pull the latest image (no authentication required for public packages)
-docker pull ghcr.io/vibhuvioio/solr-admin-x:latest
+docker pull ghcr.io/vibhuvioio/unisolr:latest
 
 # Run the container
-docker run -p 3000:3000 ghcr.io/vibhuvioio/solr-admin-x:latest
+docker run -p 3000:3000 ghcr.io/vibhuvioio/unisolr:latest
 ```
 
 ### Making Packages Public
@@ -136,7 +136,7 @@ docker build -t test-image .
 docker run -p 3000:3000 test-image
 
 # Check available tags
-curl -s https://api.github.com/user/packages/container/solr-admin-x/versions \
+curl -s https://api.github.com/user/packages/container/unisolr/versions \
   -H "Authorization: Bearer YOUR_TOKEN" | jq '.[].metadata.container.tags'
 ```
 
@@ -186,9 +186,9 @@ Your Docker images will be automatically built and publicly available for anyone
 
 GitHub Actions will automatically build and push images when:
 
-- **Push to main branch** → `gcr.io/PROJECT_ID/solr-admin-x:main` + `:latest`
-- **Push to develop branch** → `gcr.io/PROJECT_ID/solr-admin-x:develop`
-- **Create release tag** (v*) → `gcr.io/PROJECT_ID/solr-admin-x:v1.0.0`
+- **Push to main branch** → `gcr.io/PROJECT_ID/unisolr:main` + `:latest`
+- **Push to develop branch** → `gcr.io/PROJECT_ID/unisolr:develop`
+- **Create release tag** (v*) → `gcr.io/PROJECT_ID/unisolr:v1.0.0`
 
 ### Manual Triggers
 
@@ -219,8 +219,8 @@ View pushed images:
 # List all images
 gcloud container images list --repository=gcr.io/YOUR_PROJECT_ID
 
-# List tags for solr-admin-x
-gcloud container images list-tags gcr.io/YOUR_PROJECT_ID/solr-admin-x
+# List tags for unisolr
+gcloud container images list-tags gcr.io/YOUR_PROJECT_ID/unisolr
 ```
 
 ## 🔧 Troubleshooting
