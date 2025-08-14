@@ -57,7 +57,8 @@ const Index = () => {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('http://localhost:3001/api/solr/datacenters/summary')
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const response = await fetch(`${apiBase}/solr/datacenters/summary`)
       
       if (response.ok) {
         const data: DatacenterSummaryResponse = await response.json()

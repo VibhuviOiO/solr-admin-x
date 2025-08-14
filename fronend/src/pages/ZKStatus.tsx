@@ -102,7 +102,8 @@ export function ZKStatusContent() {
       setLoading(true)
       setError(null)
       
-      const zkResponse = await fetch(`http://localhost:3001/api/solr/cluster/zookeeper${datacenter ? `?datacenter=${datacenter}` : ''}`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const zkResponse = await fetch(`${apiBase}/solr/cluster/zookeeper${datacenter ? `?datacenter=${datacenter}` : ''}`)
 
       if (zkResponse.ok) {
         const zkData: ZooKeeperInfo = await zkResponse.json()

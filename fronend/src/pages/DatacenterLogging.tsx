@@ -62,7 +62,8 @@ const DatacenterLogging = () => {
       setLoading(true)
       setError(null)
       try {
-        const nodesRes = await fetch(`http://localhost:3001/api/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || "")}&loadAll=true`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const nodesRes = await fetch(`${apiBase}/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || "")}&loadAll=true`)
         if (!nodesRes.ok) throw new Error("Failed to fetch nodes")
         const nodesData = await nodesRes.json()
         const onlineNodes = nodesData.nodes?.filter((n: any) => n.status === "online") || []
@@ -84,7 +85,8 @@ const DatacenterLogging = () => {
     setNodeLog(null)
     setExpandedRows(new Set())
     setLoading(true)
-    fetch(`http://localhost:3001/api/solr/logging/info?node=${encodeURIComponent(selectedNode)}`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  fetch(`${apiBase}/solr/logging/info?node=${encodeURIComponent(selectedNode)}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => setNodeLog(data))
       .catch(() => setNodeLog(null))
@@ -96,7 +98,8 @@ const DatacenterLogging = () => {
       setLoading(true)
       setNodeLog(null)
       setExpandedRows(new Set())
-      fetch(`http://localhost:3001/api/solr/logging/info?node=${encodeURIComponent(selectedNode)}`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  fetch(`${apiBase}/solr/logging/info?node=${encodeURIComponent(selectedNode)}`)
         .then(res => res.ok ? res.json() : null)
         .then(data => setNodeLog(data))
         .catch(() => setNodeLog(null))

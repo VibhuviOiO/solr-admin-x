@@ -16,6 +16,7 @@ import DatacenterJavaProperties from "./pages/DatacenterJavaProperties";
 
 import DatacenterThreadDump from "./pages/DatacenterThreadDump";
 import DatacenterOverview from "./pages/DatacenterOverview";
+import DatacenterDashboard from "./pages/DatacenterDashboard";
 
 const queryClient = new QueryClient();
 
@@ -37,8 +38,8 @@ const App = () => (
           <Route path="/datacenter/:datacenter/logging-level" element={<LoggingLevel />} />
           <Route path="/datacenter/:datacenter/java-properties" element={<DatacenterJavaProperties />} />
           <Route path="/datacenter/:datacenter/thread-dump" element={<DatacenterThreadDump />} />
-          <Route path="/datacenter/:datacenter/overview" element={<DatacenterOverview />} />
-          
+          <Route path="/datacenter/:datacenter/dashboard" element={<DatacenterDashboard />} />
+           <Route path="/datacenter/:datacenter/overview" element={<DatacenterOverview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   solr-admin-x:
     image: ghcr.io/vibhuvioio/solr-admin-x:latest
@@ -8,17 +6,13 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
+      - PORT=3001
       - DC_CONFIG_PATH=/app/config/dc-data.demo.json
     volumes:
       - ./demo-config:/app/config:ro
     networks:
       - solr_dc1_net
       - solr_dc2_net
-    depends_on:
-      - solr1
-      - solr2
-      - solr1_dc2
-      - solr2_dc2
     restart: unless-stopped
 
 networks:

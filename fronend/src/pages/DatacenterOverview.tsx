@@ -131,9 +131,10 @@ const DatacenterOverview = () => {
       console.log('Fetching datacenter info for:', datacenter)
       
       // Make parallel API calls like ClusterNodes does
+      const apiBase = import.meta.env.VITE_API_BASE_URL;
       const [nodesResponse, zkResponse] = await Promise.allSettled([
-        fetch(`http://localhost:3001/api/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || 'APAC Singapore')}&loadAll=true`),
-        fetch(`http://localhost:3001/api/solr/cluster/zookeeper${datacenter ? `?datacenter=${encodeURIComponent(datacenter)}` : ''}`)
+        fetch(`${apiBase}/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || 'APAC Singapore')}&loadAll=true`),
+        fetch(`${apiBase}/solr/cluster/zookeeper${datacenter ? `?datacenter=${encodeURIComponent(datacenter)}` : ''}`)
       ])
 
       let solrNodes: SolrNode[] = []

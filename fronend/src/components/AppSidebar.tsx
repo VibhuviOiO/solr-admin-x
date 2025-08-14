@@ -74,7 +74,8 @@ export function AppSidebar() {
     const fetchDatacenters = async () => {
       try {
         // Try to fetch from backend API first
-        const response = await fetch('http://localhost:3001/api/solr/datacenters')
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const response = await fetch(`${apiBase}/solr/datacenters`)
         if (response.ok) {
           const data = await response.json()
           setDatacenters(data.datacenters || data)
@@ -109,30 +110,31 @@ export function AppSidebar() {
       } catch (error) {
         console.error('Failed to fetch datacenter config:', error)
         // Fallback to hardcoded values from dc-data.json structure
+        const fallbackHost = window.location.hostname || 'localhost';
         const fallbackDatacenters = [
           {
             name: 'London',
             default: true,
             zookeeperNodes: [
-              { host: 'localhost', port: 2181 },
-              { host: 'localhost', port: 2182 },
-              { host: 'localhost', port: 2183 }
+              { host: fallbackHost, port: 2181 },
+              { host: fallbackHost, port: 2182 },
+              { host: fallbackHost, port: 2183 }
             ],
             nodes: [
-              { name: 'solr1', host: 'localhost', port: 8983 },
-              { name: 'solr2', host: 'localhost', port: 8982 }
+              { name: 'solr1', host: fallbackHost, port: 8983 },
+              { name: 'solr2', host: fallbackHost, port: 8982 }
             ]
           },
           {
             name: 'Virginia',
             zookeeperNodes: [
-              { host: 'localhost', port: 5181 },
-              { host: 'localhost', port: 4182 },
-              { host: 'localhost', port: 5183 }
+              { host: fallbackHost, port: 5181 },
+              { host: fallbackHost, port: 4182 },
+              { host: fallbackHost, port: 5183 }
             ],
             nodes: [
-              { name: 'solr1_dc2', host: 'localhost', port: 8883 },
-              { name: 'solr2_dc2', host: 'localhost', port: 8882 }
+              { name: 'solr1_dc2', host: fallbackHost, port: 8883 },
+              { name: 'solr2_dc2', host: fallbackHost, port: 8882 }
             ]
           }
         ]

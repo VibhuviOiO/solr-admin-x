@@ -61,33 +61,38 @@ const DatacenterSecurity = () => {
     try {
       setLoading(true)
 
+      // Use environment variable for API base URL
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001"
+
       // Fetch nodes and ZK info
       const [nodesResponse, zkResponse] = await Promise.allSettled([
-        fetch(`http://localhost:3001/api/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || 'APAC Singapore')}&loadAll=true`),
-        fetch(`http://localhost:3001/api/solr/cluster/zookeeper${datacenter ? `?datacenter=${encodeURIComponent(datacenter)}` : ''}`)
+        fetch(`${apiBase}/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || 'APAC Singapore')}&loadAll=true`),
+        fetch(`${apiBase}/solr/cluster/zookeeper${datacenter ? `?datacenter=${encodeURIComponent(datacenter)}` : ''}`)
       ])
 
       let zkHosts: string[] = []
       
+
       // Get ZK hosts for security command examples
       if (zkResponse.status === 'fulfilled' && zkResponse.value.ok) {
         const zkData = await zkResponse.value.json()
         const dcZkInfo = zkData.datacenters?.[datacenter || 'APAC Singapore']
-        
         if (dcZkInfo?.zkHosts) {
-          zkHosts = dcZkInfo.zkHosts.map((host: any) => 
+          zkHosts = dcZkInfo.zkHosts.map((host: any) =>
             `${host.hostname || host.host?.split(':')[0] || 'localhost'}:${host.port || host.clientPort || 2181}`
           )
         }
       }
 
       // Fetch only online nodes
-      if (nodesResponse.status !== 'fulfilled' || !nodesResponse.value.ok) {
-        throw new Error(`Nodes API returned ${nodesResponse.value?.status || 'error'}`)
+      if (nodesResponse.status !== 'fulfilled') {
+        throw new Error(`Nodes API call failed: ${nodesResponse.reason ? nodesResponse.reason : 'unknown error'}`)
+      }
+      if (!nodesResponse.value.ok) {
+        throw new Error(`Nodes API returned ${nodesResponse.value.status}`)
       }
 
       const nodesData = await nodesResponse.value.json()
-      
       // Process only online nodes for security info
       const onlineNodes = (nodesData.nodes || []).filter((node: any) => node.status === 'online')
       
@@ -99,7 +104,7 @@ const DatacenterSecurity = () => {
         }
 
         try {
-          const securityResponse = await fetch(`http://localhost:3001/api/solr/admin/security/${node.name}`)
+          const securityResponse = await fetch(`${apiBase}/solr/admin/security/${node.name}`)
           if (securityResponse.ok) {
             const securityData = await securityResponse.json()
             return {

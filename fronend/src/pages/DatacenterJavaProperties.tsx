@@ -33,7 +33,8 @@ const DatacenterJavaProperties = () => {
       setLoading(true)
       
       // Use the same approach as DatacenterDashboard - fetch from cluster/nodes with datacenter filter
-      const nodesResponse = await fetch(`http://localhost:3001/api/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || 'APAC Singapore')}&loadAll=true`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const nodesResponse = await fetch(`${apiBase}/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || 'APAC Singapore')}&loadAll=true`)
       if (!nodesResponse.ok) {
         throw new Error(`API returned ${nodesResponse.status}`)
       }
@@ -55,7 +56,8 @@ const DatacenterJavaProperties = () => {
       const onlineNodes = solrNodes.filter(node => node.status === 'online')
       const propertiesPromises = onlineNodes.map(async (node) => {
         try {
-          const response = await fetch(`http://localhost:3001/api/solr/admin/properties/${node.name}`)
+          const apiBase = import.meta.env.VITE_API_BASE_URL;
+          const response = await fetch(`${apiBase}/solr/admin/properties/${node.name}`)
           if (!response.ok) {
             throw new Error(`Properties API returned ${response.status} for ${node.name}`)
           }

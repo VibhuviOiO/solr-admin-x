@@ -171,7 +171,8 @@ function DatacenterNodesContent() {
       console.log('Fetching nodes for datacenter:', datacenter)
       
       // Fetch nodes data for specific datacenter
-      const response = await fetch(`http://localhost:3001/api/solr/datacenter/${encodeURIComponent(datacenter)}/nodes`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const response = await fetch(`${apiBase}/solr/datacenter/${encodeURIComponent(datacenter)}/nodes`)
       
       if (response.ok) {
         const data: DatacenterNodesResponse = await response.json()

@@ -63,7 +63,8 @@ const DatacenterThreadDump = () => {
       setError(null)
       setNodes([])
       try {
-        const nodesRes = await fetch(`http://localhost:3001/api/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || "")}&loadAll=true`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const nodesRes = await fetch(`${apiBase}/solr/cluster/nodes?datacenter=${encodeURIComponent(datacenter || "")}&loadAll=true`)
         if (!nodesRes.ok) throw new Error("Failed to fetch nodes")
         const nodesData = await nodesRes.json()
         const onlineNodes = nodesData.nodes?.filter((n: any) => n.status === "online") || []
@@ -91,7 +92,8 @@ const DatacenterThreadDump = () => {
     setExpanded(new Set())
     const fetchThreads = async () => {
       try {
-        const threadRes = await fetch(`http://localhost:3001/api/info/threads?node=${encodeURIComponent(selectedNode)}`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const threadRes = await fetch(`${apiBase}/api/info/threads?node=${encodeURIComponent(selectedNode)}`)
         if (!threadRes.ok) throw new Error("Failed to fetch thread dump")
         const threadDataRes: InfoThreadsResponse = await threadRes.json()
         const entries = (threadDataRes.system.threadDump || []).filter((t: any) => typeof t === "object") as ThreadDumpEntry[]
@@ -121,7 +123,8 @@ const DatacenterThreadDump = () => {
     setExpanded(new Set())
     const fetchThreads = async () => {
       try {
-        const threadRes = await fetch(`http://localhost:3001/api/info/threads?node=${encodeURIComponent(selectedNode)}`)
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const threadRes = await fetch(`${apiBase}/api/info/threads?node=${encodeURIComponent(selectedNode)}`)
         if (!threadRes.ok) throw new Error("Failed to fetch thread dump")
         const threadDataRes: InfoThreadsResponse = await threadRes.json()
         const entries = (threadDataRes.system.threadDump || []).filter((t: any) => typeof t === "object") as ThreadDumpEntry[]

@@ -131,9 +131,10 @@ export function ClusterNodesContent() {
       
       console.log('Fetching cluster data...', { selectedDatacenter }) // Debug log
       
+      const apiBase = import.meta.env.VITE_API_BASE_URL;
       const [nodesResponse, zkResponse] = await Promise.allSettled([
-        fetch(`http://localhost:3001/api/solr/cluster/nodes${selectedDatacenter !== 'all' ? `?datacenter=${selectedDatacenter}` : ''}`),
-        fetch(`http://localhost:3001/api/solr/cluster/zookeeper${selectedDatacenter !== 'all' ? `?datacenter=${selectedDatacenter}` : ''}`)
+        fetch(`${apiBase}/solr/cluster/nodes${selectedDatacenter !== 'all' ? `?datacenter=${selectedDatacenter}` : ''}`),
+        fetch(`${apiBase}/solr/cluster/zookeeper${selectedDatacenter !== 'all' ? `?datacenter=${selectedDatacenter}` : ''}`)
       ])
 
       console.log('Nodes response:', nodesResponse) // Debug log
