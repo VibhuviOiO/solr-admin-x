@@ -549,3 +549,14 @@ For security-related issues, please read our [Security Policy](SECURITY.md) and 
 ⭐ **Star this repo** if you find it useful!  
 🍴 **Fork it** to start contributing!  
 📢 **Share it** with your network!
+
+
+Read this code and understand 
+1. solr-web/partials/cloud.html
+2. solr-web/js/angular/controllers/cloud.js
+
+Understand code for Nodes. Create the page Nodes accordingly. use the APIs the way it is used in the application but same replica is created in the backend to handle the mutinodes clusters and multiple datacenter is the concern of this project. Redesign this page fronend/src/pages/DatacenterNodes.tsx with modern practices. 
+
+Most of the data is coming from the 
+http://localhost:3001/api/solr/system/info
+http://localhost:3001/api/solr/metrics?node=solr1

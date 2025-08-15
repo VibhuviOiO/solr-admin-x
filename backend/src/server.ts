@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 import solrRoutes from './routes/solr';
+import coresRoutes from './routes/cores';
 import loggingRoutes from './routes/logging';
 import loggingLevelsRoutes from './routes/loggingLevels';
 import securityRoutes from './routes/security';
@@ -27,6 +28,7 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/solr', solrRoutes);
+app.use('/api/solr', coresRoutes);
 app.use('/api/solr/logging', loggingRoutes);
 app.use('/api/solr/logging', loggingLevelsRoutes);
 app.use('/api/security', securityRoutes);

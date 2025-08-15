@@ -186,15 +186,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-gray-200 dark:border-gray-800">
-      <SidebarHeader className="p-4 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg">
-            <Database className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">SolrLens</h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Cluster Management</p>
-          </div>
+      <SidebarHeader className="border-b">
+        <div className="flex">
+          <img 
+            src="/logo.png" 
+            alt="SolrLens Logo" 
+            className="block max-w-[200px] max-h-[100px] w-auto h-auto mx-auto" 
+            style={{ aspectRatio: '2 / 1', objectFit: 'contain' }}
+          />
         </div>
       </SidebarHeader>
 

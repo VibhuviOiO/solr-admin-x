@@ -340,7 +340,7 @@ const DatacenterOverview = () => {
                   <p className="text-sm font-medium text-muted-foreground">Solr Nodes</p>
                   <p className="text-2xl font-bold">{datacenterInfo.solrNodes.length}</p>
                 </div>
-                <img src="/solr-ico.png" alt="Solr" className="w-8 h-8" />
+                <img src="/solrlogo.png" alt="Solr" className="w-8 h-8" />
               </div>
             </CardContent>
           </Card>
@@ -390,7 +390,7 @@ const DatacenterOverview = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <img src="/solr-ico.png" alt="Solr" className="w-5 h-5" />
+                <img src="/solrlogo.png" alt="Solr" className="w-5 h-5" />
                 Solr Nodes ({healthySolrNodes} healthy / {unhealthySolrNodes} unhealthy)
               </CardTitle>
               
@@ -401,7 +401,7 @@ const DatacenterOverview = () => {
                   return (
                     <>
                       <Badge variant="secondary" className="text-xs font-mono bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800">
-                        <img src="/solr-ico.png" alt="Solr" className="w-3 h-3 mr-1" />
+                        <img src="/solrlogo.png" alt="Solr" className="w-3 h-3 mr-1" />
                         Solr {healthyNode.lucene!['solr-spec-version']}
                       </Badge>
                       <Badge variant="secondary" className="text-xs font-mono bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
