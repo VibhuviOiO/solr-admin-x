@@ -1,7 +1,7 @@
 services:
-  unisolr:
-    image: ghcr.io/vibhuvioio/unisolr:latest
-    container_name: unisolr-demo
+  SolrLens:
+    image: ghcr.io/vibhuvioio/SolrLens:latest
+    container_name: SolrLens-demo
     ports:
       - "3001:3001"
     environment:

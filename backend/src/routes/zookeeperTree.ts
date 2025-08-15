@@ -39,8 +39,15 @@ router.get('/admin/zookeeper/tree', async (req: Request, res: Response) => {
     if (!baseUrl) {
       return res.status(404).json({ error: 'No Solr node found for ZooKeeper tree' });
     }
+    // Forward all query params except node/datacenter to Solr
+    const solrParams: Record<string, string> = {};
+    for (const [key, value] of Object.entries(req.query)) {
+      if (key !== 'node' && key !== 'datacenter' && value !== undefined) {
+        solrParams[key] = String(value);
+      }
+    }
     const zkTreeService = new ZookeeperTreeService(baseUrl);
-    const tree: ZookeeperTreeResponse = await zkTreeService.getZookeeperTree();
+    const tree = await zkTreeService.getZookeeperTree(solrParams);
     res.json(tree);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch ZooKeeper tree', details: error instanceof Error ? error.message : 'Unknown error' });

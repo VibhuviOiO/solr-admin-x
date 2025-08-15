@@ -1,15 +1,15 @@
-# UniSolr
+# SolrLens
 
 A modern web application for managing Apache Solr clusters with real-time monitoring and administration capabilities.
 
-[![Build Status](https://github.com/YOUR_ORG/unisolr/workflows/Build%20and%20Push%20Docker%20Image/badge.svg)](https://github.com/YOUR_ORG/unisolr/actions)
-[![Docker Image](https://img.shields.io/badge/docker-gcr.io-blue)](https://gcr.io/YOUR_PROJECT_ID/unisolr)
+[![Build Status](https://github.com/YOUR_ORG/SolrLens/workflows/Build%20and%20Push%20Docker%20Image/badge.svg)](https://github.com/YOUR_ORG/SolrLens/actions)
+[![Docker Image](https://img.shields.io/badge/docker-gcr.io-blue)](https://gcr.io/YOUR_PROJECT_ID/SolrLens)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
 
 ## 🌟 **Open Source Project**
 
-UniSolr is an **open source project** welcoming contributions from the community! Whether you're a seasoned developer or just starting out, there are many ways to contribute.
+SolrLens is an **open source project** welcoming contributions from the community! Whether you're a seasoned developer or just starting out, there are many ways to contribute.
 
 ### 🤝 **How to Contribute**
 - 🐛 **Report bugs** and request features
@@ -28,74 +28,93 @@ UniSolr is an **open source project** welcoming contributions from the community
 - **CI/CD**: GitHub Actions with Google Container Registry
 
 ## 🚀 Quick Start
+docker pull ghcr.io/vibhuvioio/SolrLens:latest
+docker run -p 3000:3000 ghcr.io/vibhuvioio/SolrLens:latest
+docker run -p 3000:3000 ghcr.io/vibhuvioio/SolrLens:latest
+git clone <repository-url>
+cd SolrLens
 
 ### Prerequisites
 
 - Docker & Docker Compose
 - Node.js 20+ (for local development)
 
-### 🐳 Using Pre-built Docker Images
+---
 
-```bash
-# Pull and run the latest version
-docker pull ghcr.io/vibhuvioio/unisolr:latest
-docker run -p 3000:3000 ghcr.io/vibhuvioio/unisolr:latest
+## 🏗️ Development (Local)
 
-# Or run directly
-docker run -p 3000:3000 ghcr.io/vibhuvioio/unisolr:latest
-```
+1. **Clone the repository:**
+  ```bash
+  git clone <repository-url>
+  cd SolrLens
+  ```
 
-The application will be available at: http://localhost:3000
+3. **Set up environment variables:**
+  - Create `.env` files in both `backend/` and `fronend/` directories (see Environment Variables section below).
 
-### 🐳 Docker Development
+4. **Start backend:**
+  ```bash
+  cd backend
+  npm i
+  npm run build 
+  DC_CONFIG_PATH="../demo/demo-config/dc-data.localhost.json" npm run start
+  ```
+> To get the real data run the demo solr
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd unisolr
+5. **Start frontend (in a new terminal):**
+  ```bash
+  cd fronend
+  npm i
+  npm run dev
+  ```
 
-# Start development environment
-npm run dev
+6. **Access the app:**
+  - Frontend: http://localhost:3000
+  - Backend API: http://localhost:3001
 
-# Stop development environment
-npm run dev:down
-```
+---
 
-The application will be available at:
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:3000
-- **Health Check**: http://localhost:3000/health
+## 🚢 Production Deployment (Docker)
 
-### 🏭 Docker Production
+1. **Build and run with Docker Compose:**
+  ```bash
+  docker-compose -f docker-compose.prod.yml up --build
+  ```
+  - The app will be available at: http://localhost:3000
 
-```bash
-# Build and start production environment
-npm run prod
+2. **Or run with Docker only:**
+  ```bash
+  docker build -t SolrLens:latest .
+  docker run -d \
+    --name SolrLens \
+    -p 3000:3000 \
+    -e NODE_ENV=production \
+    -e DC_CONFIG_PATH=/app/config/solr-datacenters.json \
+    -v /path/to/your/config:/app/config:ro \
+    SolrLens:latest
+  ```
+  - The app will be available at: http://localhost:3000
 
-# Stop production environment
-npm run prod:down
-```
+---
 
-The application will be available at:
-- **Application**: http://localhost:3000
+## 🧪 Demo Environment
 
-### 🛠️ Local Development (without Docker)
+1. **Use the provided demo config:**
+  ```bash
+  export DC_CONFIG_PATH=./demo/demo-config/dc-data.localhost.json
+  cd backend && npm run dev
+  ```
+  - Or use Docker Compose with the demo config:
+  ```bash
+  docker-compose -f demo/docker-compose-app.yml up --build
+  ```
 
-```bash
-# Install all dependencies
-npm run install:all
-
-# Terminal 1: Start backend
-npm run backend:dev
-
-# Terminal 2: Start frontend
-npm run frontend:dev
-```
+---
 
 ## 📁 Project Structure
 
 ```
-unisolr/
+SolrLens/
 ├── backend/                 # Node.js + Express backend
 │   ├── src/
 │   │   ├── server.ts       # Main server file
@@ -122,7 +141,7 @@ unisolr/
 
 ## ⚙️ Configuration
 
-UniSolr requires a datacenter configuration file to define your Solr clusters. The application uses the `DC_CONFIG_PATH` environment variable to locate this file.
+SolrLens requires a datacenter configuration file to define your Solr clusters. The application uses the `DC_CONFIG_PATH` environment variable to locate this file.
 
 ### 📋 Required Configuration
 
@@ -184,8 +203,8 @@ Create a JSON file with this structure:
 #### With Docker Compose:
 ```yaml
 services:
-  unisolr:
-    image: ghcr.io/vibhuvioio/unisolr:latest
+  SolrLens:
+    image: ghcr.io/vibhuvioio/SolrLens:latest
     ports:
       - "3000:3000"
     environment:
@@ -200,7 +219,7 @@ docker run -d \
   -p 3000:3000 \
   -v /path/to/your/config:/app/config:ro \
   -e DC_CONFIG_PATH=/app/config/solr-datacenters.json \
-  ghcr.io/vibhuvioio/unisolr:latest
+  ghcr.io/vibhuvioio/SolrLens:latest
 ```
 
 ### 🧪 Demo Configuration
@@ -315,7 +334,7 @@ DC_CONFIG_PATH=your-config.json npm run backend:dev
 
 ## 🔧 Environment Variables
 
-### Backend (.env)
+### Backend (`backend/.env`)
 ```bash
 NODE_ENV=development|production
 PORT=3000
@@ -324,12 +343,32 @@ SOLR_SECONDARY_URL=http://localhost:8982
 ZK_HOST=localhost:2181
 ```
 
-### Frontend (.env)
+### Frontend (`fronend/.env`)
+
+#### For Local Development (Vite dev server, backend on Node):
 ```bash
-VITE_API_URL=http://localhost:3000
-VITE_APP_TITLE=UniSolr
+VITE_API_BASE_URL=http://localhost:3001/api
+VITE_APP_TITLE=SolrLens
 VITE_APP_VERSION=1.0.0
 ```
+
+#### For Production (Docker or all-in-one container):
+```bash
+VITE_API_BASE_URL=http://localhost:3000/api
+VITE_APP_TITLE=SolrLens
+VITE_APP_VERSION=1.0.0
+```
+
+> In production, the frontend and backend are typically served from the same domain and port, so the API base URL should point to the backend’s `/api` route.
+
+**How it works:**
+- The frontend uses `VITE_API_BASE_URL` to make API requests.
+- In development, this points to your backend’s dev port (e.g., 3001).
+- In production, this points to the backend’s `/api` endpoint (e.g., 3000).
+
+**Don’t forget:**
+- Update your `.env` files accordingly before building or running containers.
+- Restart the frontend after changing environment variables.
 
 ## 📦 Docker Commands
 
@@ -337,10 +376,10 @@ VITE_APP_VERSION=1.0.0
 
 ```bash
 # Build production image
-docker build -t unisolr .
+docker build -t SolrLens .
 
 # Build development image
-docker build -f Dockerfile.dev -t unisolr:dev .
+docker build -f Dockerfile.dev -t SolrLens:dev .
 ```
 
 ### Running Containers
@@ -390,16 +429,16 @@ docker-compose -f docker-compose.prod.yml ps
 
 1. **Build the image**:
    ```bash
-   docker build -t unisolr:latest .
+   docker build -t SolrLens:latest .
    ```
 
 2. **Run in production**:
    ```bash
    docker run -d \
-     --name unisolr \
+     --name SolrLens \
      -p 3000:3000 \
      -e NODE_ENV=production \
-     unisolr:latest
+     SolrLens:latest
    ```
 
 ### Docker Hub Deployment
@@ -407,10 +446,10 @@ docker-compose -f docker-compose.prod.yml ps
 ```bash
 # Images are automatically published to GitHub Container Registry
 # Available tags:
-docker pull ghcr.io/vibhuvioio/unisolr:latest        # Latest main branch
-docker pull ghcr.io/vibhuvioio/unisolr:main          # Main branch
-docker pull ghcr.io/vibhuvioio/unisolr:develop       # Develop branch  
-docker pull ghcr.io/vibhuvioio/unisolr:v1.0.0        # Specific version
+docker pull ghcr.io/vibhuvioio/SolrLens:latest        # Latest main branch
+docker pull ghcr.io/vibhuvioio/SolrLens:main          # Main branch
+docker pull ghcr.io/vibhuvioio/SolrLens:develop       # Develop branch  
+docker pull ghcr.io/vibhuvioio/SolrLens:v1.0.0        # Specific version
 
 # All images are publicly available - no authentication required
 ```
@@ -421,11 +460,11 @@ docker pull ghcr.io/vibhuvioio/unisolr:v1.0.0        # Specific version
 
 ```bash
 # Backend dependencies
-docker-compose -f docker-compose.dev.yml exec unisolr-dev sh
+docker-compose -f docker-compose.dev.yml exec SolrLens-dev sh
 cd backend && npm install <package-name>
 
 # Frontend dependencies
-docker-compose -f docker-compose.dev.yml exec unisolr-dev sh
+docker-compose -f docker-compose.dev.yml exec SolrLens-dev sh
 cd fronend && npm install <package-name>
 ```
 
@@ -466,10 +505,10 @@ The application is ready for database integration. Environment variables are con
 docker-compose logs -f
 
 # Access container shell
-docker-compose exec unisolr-dev sh
+docker-compose exec SolrLens-dev sh
 
 # Check Docker images
-docker images | grep unisolr
+docker images | grep SolrLens
 
 # Check running containers
 docker ps
@@ -499,8 +538,8 @@ For security-related issues, please read our [Security Policy](SECURITY.md) and 
 
 ## 📞 Support & Community
 
-- 📋 **Issues**: [GitHub Issues](https://github.com/YOUR_ORG/unisolr/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/YOUR_ORG/unisolr/discussions)
+- 📋 **Issues**: [GitHub Issues](https://github.com/YOUR_ORG/SolrLens/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/YOUR_ORG/SolrLens/discussions)
 - 📧 **Email**: [your-email@domain.com]
 
 ---

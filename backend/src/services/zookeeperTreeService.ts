@@ -4,10 +4,16 @@ import { ZookeeperTreeResponse } from '../interfaces/zookeeperTreeResponse';
 export class ZookeeperTreeService {
   constructor(private baseUrl: string) {}
 
-  async getZookeeperTree(): Promise<ZookeeperTreeResponse> {
-    const url = `${this.baseUrl}/solr/admin/zookeeper?wt=json`;
+  async getZookeeperTree(params?: Record<string, string | boolean>): Promise<any> {
+    let url = `${this.baseUrl}/solr/admin/zookeeper?wt=json`;
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null) {
+          url += `&${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+        }
+      }
+    }
     const response = await axios.get(url);
-  // The Solr API returns the tree as { tree: [...] }
-  return response.data as ZookeeperTreeResponse;
+    return response.data;
   }
 }

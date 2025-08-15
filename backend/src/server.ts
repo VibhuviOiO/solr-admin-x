@@ -50,7 +50,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'UniSolr Backend is running' });
+  res.json({ status: 'OK', message: 'SolrLens Backend is running' });
 });
 
 app.listen(PORT, () => {

@@ -1,5 +1,5 @@
 // solrMenus.ts
-// Centralized menu structure for UniSolr sidebar, supporting multi-level menus and per-datacenter customization.
+// Centralized menu structure for SolrLens sidebar, supporting multi-level menus and per-datacenter customization.
 
 import {
   BarChart3,

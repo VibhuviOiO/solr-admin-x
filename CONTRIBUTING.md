@@ -1,6 +1,6 @@
-# Contributing to UniSolr
+# Contributing to SolrLens
 
-Thank you for your interest in contributing to UniSolr! We welcome contributions from the community.
+Thank you for your interest in contributing to SolrLens! We welcome contributions from the community.
 
 ## 🚀 Quick Start for Contributors
 
@@ -15,8 +15,8 @@ Thank you for your interest in contributing to UniSolr! We welcome contributions
 1. **Fork the repository**
    ```bash
    # Click "Fork" on GitHub, then clone your fork
-   git clone https://github.com/YOUR_USERNAME/unisolr.git
-   cd unisolr
+   git clone https://github.com/YOUR_USERNAME/SolrLens.git
+   cd SolrLens
    ```
 
 2. **Start with Docker (Recommended)**
@@ -85,7 +85,7 @@ npm run test
 npm run build
 
 # Test with Docker
-docker build -t unisolr:test .
+docker build -t SolrLens:test .
 ```
 
 #### Step 5: Submit a Pull Request
@@ -162,7 +162,7 @@ docs(readme): update docker setup instructions
 ## 🏗️ Project Structure
 
 ```
-unisolr/
+SolrLens/
 ├── 📁 backend/           # Node.js + Express API
 │   ├── src/
 │   │   ├── server.ts     # Main server
@@ -241,7 +241,7 @@ By contributing, you agree that your contributions will be licensed under the sa
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
 - **Backend**: Node.js, Express, TypeScript
 - **Infrastructure**: Docker, GitHub Actions, Google Cloud
-- **Monitoring**: UniSolr API, ZooKeeper integration
+- **Monitoring**: SolrLens API, ZooKeeper integration
 
 ---
 

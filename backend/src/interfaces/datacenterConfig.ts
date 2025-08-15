@@ -1,4 +1,4 @@
-// DatacenterConfig interface for UniSolr backend
+// DatacenterConfig interface for SolrLens backend
 
 export interface ClusterNode {
   name: string;

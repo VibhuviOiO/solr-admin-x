@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Demo Setup Script for UniSolr
+# Demo Setup Script for SolrLens
 # This script sets up the complete demo environment
 
 set -e
 
-echo "🚀 Setting up UniSolr Demo Environment"
+echo "🚀 Setting up SolrLens Demo Environment"
 echo "=========================================="
 
 # Colors for output
@@ -85,19 +85,19 @@ start_service "Datacenter 2 (Virginia)" "docker-compose-dc2.yml"
 print_status "Waiting for all services to stabilize..."
 sleep 10
 
-# Start the UniSolr application
-print_status "Starting UniSolr Application..."
+# Start the SolrLens application
+print_status "Starting SolrLens Application..."
 docker compose -f docker-compose-app.yml up -d
 sleep 5
 
 print_success "Demo environment is ready!"
 
 echo ""
-echo "🎉 UniSolr Demo Environment Setup Complete!"
+echo "🎉 SolrLens Demo Environment Setup Complete!"
 echo "=============================================="
 echo ""
 echo "📊 Access Points:"
-echo "  • UniSolr: http://localhost:3001"
+echo "  • SolrLens: http://localhost:3001"
 echo ""
 echo "🏢 Datacenter 1 (London):"
 echo "  • Solr Node 1: http://localhost:8983"

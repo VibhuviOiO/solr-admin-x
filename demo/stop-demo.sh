@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Stop Demo Script for UniSolr
+# Stop Demo Script for SolrLens
 # This script stops all demo services and cleans up
 
 set -e
 
-echo "🛑 Stopping UniSolr Demo Environment"
+echo "🛑 Stopping SolrLens Demo Environment"
 echo "========================================"
 
 # Colors for output
@@ -24,7 +24,7 @@ print_success() {
 }
 
 # Stop all services
-print_status "Stopping UniSolr Application..."
+print_status "Stopping SolrLens Application..."
 docker compose -f docker-compose-app.yml down
 
 print_status "Stopping Datacenter 1 (London)..."
